@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const supabase = useSupabaseClient()
+const user = useSupabaseUser()
 const route = useRoute()
 
 const email = ref('')
@@ -7,12 +8,17 @@ const password = ref('')
 const errorMsg = ref('')
 const loading = ref(false)
 
+// Si ya hay sesión activa, no tiene sentido mostrar el formulario de login.
+if (user.value) {
+  await navigateTo((route.query.redirect as string) || '/dashboard')
+}
+
 async function handleLogin() {
   errorMsg.value = ''
   loading.value = true
 
   const { error } = await supabase.auth.signInWithPassword({
-    email: email.value,
+    email: email.value.trim(),
     password: password.value,
   })
 
@@ -57,7 +63,7 @@ async function handleLogin() {
         placeholder="••••••••"
       >
 
-      <p v-if="errorMsg" class="auth-card__error">{{ errorMsg }}</p>
+      <p v-if="errorMsg" class="auth-card__error" role="alert">{{ errorMsg }}</p>
 
       <button type="submit" class="btn btn-primary auth-card__submit" :disabled="loading">
         {{ loading ? 'Ingresando…' : 'Ingresar' }}

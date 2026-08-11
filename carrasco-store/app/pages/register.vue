@@ -1,23 +1,35 @@
 <script setup lang="ts">
 const supabase = useSupabaseClient()
+const user = useSupabaseUser()
 
 const fullName = ref('')
 const email = ref('')
 const password = ref('')
+const confirmPassword = ref('')
 const errorMsg = ref('')
 const successMsg = ref('')
 const loading = ref(false)
 
+if (user.value) {
+  await navigateTo('/dashboard')
+}
+
 async function handleRegister() {
   errorMsg.value = ''
   successMsg.value = ''
+
+  if (password.value !== confirmPassword.value) {
+    errorMsg.value = 'Las contraseñas no coinciden.'
+    return
+  }
+
   loading.value = true
 
   const { data, error } = await supabase.auth.signUp({
-    email: email.value,
+    email: email.value.trim(),
     password: password.value,
     options: {
-      data: { full_name: fullName.value },
+      data: { full_name: fullName.value.trim() },
     },
   })
 
@@ -61,8 +73,19 @@ async function handleRegister() {
         placeholder="Mínimo 6 caracteres"
       >
 
-      <p v-if="errorMsg" class="auth-card__error">{{ errorMsg }}</p>
-      <p v-if="successMsg" class="auth-card__success">{{ successMsg }}</p>
+      <label for="confirmPassword">Confirmar contraseña</label>
+      <input
+        id="confirmPassword"
+        v-model="confirmPassword"
+        type="password"
+        required
+        minlength="6"
+        autocomplete="new-password"
+        placeholder="Repite tu contraseña"
+      >
+
+      <p v-if="errorMsg" class="auth-card__error" role="alert">{{ errorMsg }}</p>
+      <p v-if="successMsg" class="auth-card__success" role="status">{{ successMsg }}</p>
 
       <button type="submit" class="btn btn-primary auth-card__submit" :disabled="loading">
         {{ loading ? 'Creando cuenta…' : 'Registrarme' }}
