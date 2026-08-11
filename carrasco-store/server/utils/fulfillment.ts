@@ -2,6 +2,8 @@ import type { H3Event } from 'h3'
 import { and, eq } from 'drizzle-orm'
 import { serverSupabaseServiceRole } from '#supabase/server'
 import {
+  cartItems,
+  carts,
   digitalLicenses,
   orderItems,
   orders,
@@ -44,6 +46,13 @@ export async function fulfillOrder(event: H3Event, orderId: string) {
     }
 
     await db.update(orders).set({ status: 'paid' }).where(eq(orders.id, orderId))
+
+    // Recien aca se vacia el carrito: si el pago hubiera fallado, el usuario
+    // conserva lo seleccionado para reintentar (ver server/api/checkout/index.post.ts).
+    const cart = await db.query.carts.findFirst({ where: eq(carts.userId, order.userId) })
+    if (cart) {
+      await db.delete(cartItems).where(eq(cartItems.cartId, cart.id))
+    }
   }
   catch (err) {
     // Revierte el claim para que un reintento del webhook pueda volver a procesarla

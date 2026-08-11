@@ -1,22 +1,47 @@
 <script setup lang="ts">
+interface StatusAction {
+  to: string
+  label: string
+  variant: 'btn-primary' | 'btn-outline'
+}
+
+interface StatusContent {
+  title: string
+  message: string
+  tone: string
+  actions: StatusAction[]
+}
+
 const route = useRoute()
 const status = route.params.status as string
 
-const content: Record<string, { title: string, message: string, tone: string }> = {
+const content: Record<string, StatusContent> = {
   success: {
     title: '¡Pago confirmado!',
     message: 'Tu orden fue registrada. Podrás ver su estado en tu panel apenas se acredite.',
     tone: 'is-success',
+    actions: [
+      { to: '/dashboard', label: 'Ir a mi panel', variant: 'btn-primary' },
+      { to: '/catalogo', label: 'Seguir comprando', variant: 'btn-outline' },
+    ],
   },
   pending: {
     title: 'Pago en proceso',
     message: 'Estamos esperando la confirmación de Mercado Pago. Te avisaremos cuando se acredite.',
     tone: 'is-pending',
+    actions: [
+      { to: '/dashboard', label: 'Ir a mi panel', variant: 'btn-primary' },
+      { to: '/catalogo', label: 'Seguir comprando', variant: 'btn-outline' },
+    ],
   },
   failure: {
     title: 'El pago no se pudo procesar',
-    message: 'Intenta nuevamente desde tu carrito o con otro medio de pago.',
+    message: 'No se te realizó ningún cargo. Tu carrito sigue intacto: puedes reintentar el pago o elegir otro medio.',
     tone: 'is-failure',
+    actions: [
+      { to: '/cart', label: 'Volver al carrito', variant: 'btn-primary' },
+      { to: '/catalogo', label: 'Seguir comprando', variant: 'btn-outline' },
+    ],
   },
 }
 
@@ -29,8 +54,15 @@ const info = computed(() => content[status] ?? content.failure!)
       <h1>{{ info.title }}</h1>
       <p>{{ info.message }}</p>
       <div class="checkout-result__actions">
-        <NuxtLink to="/dashboard" class="btn btn-primary">Ir a mi panel</NuxtLink>
-        <NuxtLink to="/catalogo" class="btn btn-outline">Seguir comprando</NuxtLink>
+        <NuxtLink
+          v-for="action in info.actions"
+          :key="action.to"
+          :to="action.to"
+          class="btn"
+          :class="action.variant"
+        >
+          {{ action.label }}
+        </NuxtLink>
       </div>
     </div>
   </div>

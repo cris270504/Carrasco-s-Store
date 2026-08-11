@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { serverSupabaseUser } from '#supabase/server'
-import { cartItems, orderItems, orders, productVariants, products } from '../../database/schema'
+import { orderItems, orders, productVariants, products } from '../../database/schema'
 
 export default defineEventHandler(async (event) => {
   enforceRateLimit(event, { key: 'checkout', limit: 5, windowMs: 60_000 })
@@ -60,27 +60,36 @@ export default defineEventHandler(async (event) => {
 
   const origin = getRequestURL(event).origin
 
-  const preference = await createMpPreference({
-    items: cartData.items.map(item => ({
-      id: item.productId,
-      title: item.name,
-      quantity: item.quantity,
-      unit_price: item.unitPrice,
-    })),
-    externalReference: order!.id,
-    successUrl: `${origin}/checkout/success`,
-    failureUrl: `${origin}/checkout/failure`,
-    pendingUrl: `${origin}/checkout/pending`,
-    notificationUrl: `${origin}/api/checkout/webhook`,
-  })
+  try {
+    const preference = await createMpPreference({
+      items: cartData.items.map(item => ({
+        id: item.productId,
+        title: item.name,
+        quantity: item.quantity,
+        unit_price: item.unitPrice,
+      })),
+      externalReference: order!.id,
+      successUrl: `${origin}/checkout/success`,
+      failureUrl: `${origin}/checkout/failure`,
+      pendingUrl: `${origin}/checkout/pending`,
+      notificationUrl: `${origin}/api/checkout/webhook`,
+    })
 
-  await db.update(orders)
-    .set({ mpPreferenceId: preference.id })
-    .where(eq(orders.id, order!.id))
+    await db.update(orders)
+      .set({ mpPreferenceId: preference.id })
+      .where(eq(orders.id, order!.id))
 
-  await db.delete(cartItems).where(eq(cartItems.cartId, cart.id))
-
-  // sandbox_init_point solo viene presente cuando la preferencia se crea con
-  // credenciales/cuenta de prueba; hay que usarlo en vez de init_point para probar.
-  return { orderId: order!.id, initPoint: preference.sandbox_init_point || preference.init_point }
+    // El carrito NO se borra aca: se conserva hasta que el webhook confirme el
+    // pago aprobado (ver fulfillOrder en server/utils/fulfillment.ts). Si el
+    // pago falla o el usuario abandona en Mercado Pago, el carrito sigue
+    // intacto para reintentar sin perder lo seleccionado.
+    return { orderId: order!.id, initPoint: preference.init_point }
+  }
+  catch {
+    // No se pudo generar la preferencia de pago (credenciales invalidas, MP caido,
+    // etc.): se descarta la orden en vez de dejarla varada en 'pending_payment'
+    // para siempre sin ninguna posibilidad de completarse.
+    await db.delete(orders).where(eq(orders.id, order!.id))
+    throw createError({ statusCode: 502, statusMessage: 'No se pudo iniciar el pago con Mercado Pago. Intenta nuevamente.' })
+  }
 })

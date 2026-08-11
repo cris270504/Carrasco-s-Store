@@ -24,12 +24,18 @@ export default defineEventHandler(async (event) => {
     return { received: true }
   }
 
-  await db.update(orders)
-    .set({
-      mpPaymentId: String(payment.id),
-      paymentStatus: payment.status,
-    })
-    .where(eq(orders.id, orderId))
+  // rejected/cancelled son estados terminales de fallo: la orden pasa a
+  // 'cancelled' en vez de quedar varada en 'pending_payment' para siempre.
+  // Estados intermedios (pending, in_process, etc.) no se tocan aca.
+  const updates: Partial<typeof orders.$inferInsert> = {
+    mpPaymentId: String(payment.id),
+    paymentStatus: payment.status,
+  }
+  if (payment.status === 'rejected' || payment.status === 'cancelled') {
+    updates.status = 'cancelled'
+  }
+
+  await db.update(orders).set(updates).where(eq(orders.id, orderId))
 
   if (payment.status === 'approved') {
     await fulfillOrder(event, orderId)
