@@ -39,7 +39,8 @@ export async function createMpPreference(params: {
         failure: params.failureUrl,
         pending: params.pendingUrl,
       },
-      auto_return: 'approved',
+      // auto_return requiere back_urls publicamente alcanzables; en localhost falla.
+      // Sin el, el comprador vuelve al sitio con un clic en "Volver" desde MP.
       notification_url: params.notificationUrl,
     },
   })
