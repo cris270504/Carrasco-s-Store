@@ -2,6 +2,7 @@
 import type { Product } from '~/types/product'
 
 const { filters, resetFilters } = useProductFilters()
+const { addItem } = useCart()
 
 const { data: products, pending, error } = await useFetch<Product[]>('/api/products', {
   query: filters,
@@ -29,8 +30,18 @@ const sortedProducts = computed(() => {
 })
 
 function handleAddToCart(product: Product) {
-  // TODO(Parte 4 - Carrito): reemplazar por llamada a POST /api/cart/items
-  console.log('Agregar al carrito:', product.id)
+  // TODO(Parte 4 - Carrito): sincronizar tambien con POST /api/cart/items
+  addItem({
+    productId: product.id,
+    itemType: product.type,
+    name: product.name,
+    slug: product.slug,
+    image: product.images?.[0] ?? null,
+    variantId: null,
+    variantLabel: null,
+    unitPrice: Number(product.price),
+    preferredModality: product.serviceDetail?.defaultModality ?? null,
+  })
 }
 </script>
 
