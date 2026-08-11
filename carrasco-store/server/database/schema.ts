@@ -34,7 +34,7 @@ export const categories = pgTable('categories', {
   name: varchar('name', { length: 120 }).notNull(),
   slug: varchar('slug', { length: 140 }).notNull().unique(),
   parentId: uuid('parent_id'),
-})
+}).enableRLS()
  
 export const products = pgTable('products', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -56,7 +56,7 @@ export const products = pgTable('products', {
   categoryIdx: index('products_category_idx').on(table.categoryId),
   typeIdx: index('products_type_idx').on(table.type),
   brandIdx: index('products_brand_idx').on(table.brand),
-}))
+})).enableRLS()
  
 // Variantes para productos físicos (capacidad, color, talla...)
 export const productVariants = pgTable('product_variants', {
@@ -67,7 +67,7 @@ export const productVariants = pgTable('product_variants', {
   priceModifier: decimal('price_modifier', { precision: 10, scale: 2 }).default('0'),
   stock: integer('stock').default(0),
   sku: varchar('sku', { length: 100 }),
-})
+}).enableRLS()
  
 // Códigos/licencias para productos digitales
 export const digitalLicenses = pgTable('digital_licenses', {
@@ -77,7 +77,7 @@ export const digitalLicenses = pgTable('digital_licenses', {
   status: licenseStatusEnum('status').notNull().default('available'),
   orderItemId: uuid('order_item_id'),
   deliveredAt: timestamp('delivered_at'),
-})
+}).enableRLS()
  
 // Detalle de servicios técnicos (agendamiento)
 export const serviceDetails = pgTable('service_details', {
@@ -85,7 +85,7 @@ export const serviceDetails = pgTable('service_details', {
   productId: uuid('product_id').notNull().references(() => products.id, { onDelete: 'cascade' }).unique(),
   durationMinutes: integer('duration_minutes').notNull().default(60),
   defaultModality: bookingModalityEnum('default_modality').notNull().default('remote'),
-})
+}).enableRLS()
  
 // ============================================================
 // USUARIOS Y DIRECCIONES
@@ -102,7 +102,7 @@ export const addresses = pgTable('addresses', {
   country: varchar('country', { length: 2 }).notNull().default('PE'),
   phone: varchar('phone', { length: 30 }),
   isDefault: boolean('is_default').default(false),
-})
+}).enableRLS()
  
 // ============================================================
 // CARRITO
@@ -113,7 +113,7 @@ export const carts = pgTable('carts', {
   sessionId: varchar('session_id', { length: 255 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+}).enableRLS()
  
 export const cartItems = pgTable('cart_items', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -126,7 +126,7 @@ export const cartItems = pgTable('cart_items', {
   // solo relevante si itemType = 'service'
   preferredScheduleAt: timestamp('preferred_schedule_at'),
   preferredModality: bookingModalityEnum('preferred_modality'),
-})
+}).enableRLS()
  
 // ============================================================
 // ÓRDENES
@@ -146,7 +146,7 @@ export const orders = pgTable('orders', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => ({
   userIdx: index('orders_user_idx').on(table.userId),
-}))
+})).enableRLS()
  
 export const orderItems = pgTable('order_items', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -157,7 +157,7 @@ export const orderItems = pgTable('order_items', {
   quantity: integer('quantity').notNull().default(1),
   unitPrice: decimal('unit_price', { precision: 10, scale: 2 }).notNull(),
   digitalLicenseId: uuid('digital_license_id').references(() => digitalLicenses.id),
-})
+}).enableRLS()
  
 export const serviceBookings = pgTable('service_bookings', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -168,7 +168,7 @@ export const serviceBookings = pgTable('service_bookings', {
   modality: bookingModalityEnum('modality').notNull(),
   status: bookingStatusEnum('status').notNull().default('pending'),
   notes: text('notes'),
-})
+}).enableRLS()
  
 // ============================================================
 // RELATIONS (para queries anidadas con db.query.products.findMany({ with: {...} }))
