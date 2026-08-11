@@ -170,6 +170,14 @@ button {
   background: var(--color-border);
 }
 
+.btn-danger {
+  background: var(--color-danger);
+  color: #fff;
+}
+.btn-danger:hover:not(:disabled) {
+  background: #a52f27;
+}
+
 /* Divisor "ticket perforado" — firma visual de las tarjetas de producto */
 .ticket-divider {
   position: relative;

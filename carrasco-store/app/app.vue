@@ -11,4 +11,6 @@ onMounted(() => {
   <NuxtLayout>
     <NuxtPage />
   </NuxtLayout>
+  <ConfirmDialog />
+  <ToastStack />
 </template>

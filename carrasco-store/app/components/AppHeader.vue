@@ -2,6 +2,7 @@
 const user = useSupabaseUser()
 const { count } = useCart()
 const { theme, init, toggle } = useTheme()
+const isAdmin = useIsAdmin()
 
 onMounted(() => { init() })
 </script>
@@ -56,6 +57,20 @@ onMounted(() => { init() })
             <circle cx="14.5" cy="17" r="1.3" fill="currentColor" />
           </svg>
           <span v-if="count > 0" class="app-header__badge">{{ count }}</span>
+        </NuxtLink>
+
+        <NuxtLink
+          v-if="isAdmin"
+          to="/admin"
+          class="app-header__icon-link"
+          aria-label="Panel de administración"
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <rect x="2.5" y="2.5" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4" />
+            <rect x="11.5" y="2.5" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4" />
+            <rect x="2.5" y="11.5" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4" />
+            <rect x="11.5" y="11.5" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4" />
+          </svg>
         </NuxtLink>
 
         <NuxtLink

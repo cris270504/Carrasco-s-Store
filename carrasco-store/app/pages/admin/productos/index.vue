@@ -1,41 +1,48 @@
 <script setup lang="ts">
+import type { AdminProductListItem } from '../../../types/admin'
+
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 
-interface AdminProduct {
-  id: string
-  name: string
-  type: 'physical' | 'digital' | 'service'
-  brand: string | null
-  price: number
-  detail: string
-  isActive: boolean
-}
-
-// TODO: reemplazar por datos reales cuando exista GET /api/admin/products.
-const { data: fetchedProducts } = await useFetch<AdminProduct[]>('/api/admin/products', {
+const { data: products, refresh } = await useFetch<AdminProductListItem[]>('/api/admin/products', {
   default: () => [],
 })
-
-const mockProducts: AdminProduct[] = [
-  { id: '1a645220', name: 'Disco Duro Sólido 1TB', type: 'physical', brand: 'Seagate', price: 250, detail: '15 en stock', isActive: true },
-  { id: '2b756331', name: 'Mouse Inalámbrico', type: 'physical', brand: 'Logitech', price: 89.90, detail: '0 en stock', isActive: false },
-  { id: '3c867442', name: 'Licencia Antivirus Pro', type: 'digital', brand: null, price: 45, detail: '1 licencia disponible', isActive: true },
-  { id: '4d978553', name: 'Suite Ofimática 2026', type: 'digital', brand: null, price: 120, detail: '8 licencias disponibles', isActive: true },
-  { id: '544dd420', name: 'Formateo e Instalación de SO', type: 'service', brand: null, price: 70, detail: '60 min · Remoto', isActive: true },
-  { id: '5e089664', name: 'Diagnóstico y Limpieza PC', type: 'service', brand: null, price: 55, detail: '45 min · Presencial', isActive: true },
-]
-
-const products = computed(() => fetchedProducts.value?.length ? fetchedProducts.value : mockProducts)
 
 const typeLabels = { physical: 'Físico', digital: 'Digital', service: 'Servicio' } as const
 const typeFilter = ref<'all' | 'physical' | 'digital' | 'service'>('all')
 const search = ref('')
+const deletingId = ref<string | null>(null)
 
-const filtered = computed(() => products.value.filter((p) => {
+const confirmDialog = useConfirm()
+const toast = useToast()
+
+const filtered = computed(() => (products.value ?? []).filter((p) => {
   const matchesType = typeFilter.value === 'all' || p.type === typeFilter.value
   const matchesSearch = p.name.toLowerCase().includes(search.value.toLowerCase())
   return matchesType && matchesSearch
 }))
+
+async function handleDelete(product: AdminProductListItem) {
+  const confirmed = await confirmDialog({
+    title: 'Desactivar producto',
+    message: `"${product.name}" dejará de mostrarse en el catálogo. Podrás reactivarlo después desde su edición.`,
+    confirmLabel: 'Desactivar',
+    variant: 'danger',
+  })
+  if (!confirmed) return
+
+  deletingId.value = product.id
+  try {
+    await $fetch(`/api/admin/products/${product.id}`, { method: 'DELETE' })
+    await refresh()
+    toast.success(`"${product.name}" fue desactivado.`)
+  }
+  catch {
+    toast.error('No se pudo desactivar el producto. Intenta de nuevo.')
+  }
+  finally {
+    deletingId.value = null
+  }
+}
 </script>
 
 <template>
@@ -45,7 +52,7 @@ const filtered = computed(() => products.value.filter((p) => {
         <p class="page-header__eyebrow">Catálogo</p>
         <h1>Productos</h1>
       </div>
-      <button type="button" class="btn btn-primary">+ Nuevo producto</button>
+      <NuxtLink to="/admin/productos/nuevo" class="btn btn-primary">+ Nuevo producto</NuxtLink>
     </header>
 
     <div class="toolbar">
@@ -68,6 +75,7 @@ const filtered = computed(() => products.value.filter((p) => {
       <table class="admin-table">
         <thead>
           <tr>
+            <th>Imagen</th>
             <th>Producto</th>
             <th>Tipo</th>
             <th>Marca</th>
@@ -79,22 +87,32 @@ const filtered = computed(() => products.value.filter((p) => {
         </thead>
         <tbody>
           <tr v-for="product in filtered" :key="product.id">
+            <td>
+              <img v-if="product.image" :src="product.image" alt="" class="products-page__thumb">
+              <div v-else class="products-page__thumb products-page__thumb--empty" aria-hidden="true" />
+            </td>
             <td class="products-page__name">{{ product.name }}</td>
             <td><span class="type-badge" :class="`is-${product.type}`">{{ typeLabels[product.type] }}</span></td>
             <td>{{ product.brand ?? '—' }}</td>
-            <td class="admin-table__mono">S/ {{ product.price.toFixed(2) }}</td>
+            <td class="admin-table__mono">S/ {{ Number(product.price).toFixed(2) }}</td>
             <td class="products-page__detail">{{ product.detail }}</td>
             <td>
               <span class="status-dot" :class="{ 'is-active': product.isActive }" />
               {{ product.isActive ? 'Activo' : 'Inactivo' }}
             </td>
             <td class="products-page__actions">
-              <button type="button" class="icon-btn" aria-label="Editar">
+              <NuxtLink :to="`/admin/productos/${product.id}/editar`" class="icon-btn" aria-label="Editar">
                 <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
                   <path d="M13.5 3.5 16.5 6.5 6.5 16.5H3.5V13.5L13.5 3.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" />
                 </svg>
-              </button>
-              <button type="button" class="icon-btn is-danger" aria-label="Eliminar">
+              </NuxtLink>
+              <button
+                type="button"
+                class="icon-btn is-danger"
+                aria-label="Eliminar"
+                :disabled="deletingId === product.id"
+                @click="handleDelete(product)"
+              >
                 <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
                   <path d="M4 6h12M8 6V4h4v2M6 6l.6 10h6.8L14 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
@@ -102,7 +120,7 @@ const filtered = computed(() => products.value.filter((p) => {
             </td>
           </tr>
           <tr v-if="filtered.length === 0">
-            <td colspan="7" class="products-page__empty">Sin resultados para este filtro.</td>
+            <td colspan="8" class="products-page__empty">Sin resultados para este filtro.</td>
           </tr>
         </tbody>
       </table>
@@ -201,6 +219,18 @@ const filtered = computed(() => products.value.filter((p) => {
 }
 .admin-table__mono {
   font-family: var(--font-mono);
+}
+
+.products-page__thumb {
+  display: block;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-control);
+  object-fit: cover;
+  border: 1px solid var(--color-border);
+}
+.products-page__thumb--empty {
+  background: var(--color-bg);
 }
 
 .products-page__name {
