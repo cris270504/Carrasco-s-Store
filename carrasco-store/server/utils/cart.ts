@@ -1,6 +1,7 @@
 import type { H3Event } from 'h3'
 import { randomUUID } from 'node:crypto'
 import { and, eq, isNull } from 'drizzle-orm'
+import { serverSupabaseUser } from '#supabase/server'
 import { carts, cartItems, products, productVariants } from '../database/schema'
 
 const CART_COOKIE = 'cart_session_id'

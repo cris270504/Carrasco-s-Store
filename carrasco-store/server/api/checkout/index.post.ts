@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm'
+import { serverSupabaseUser } from '#supabase/server'
 import { cartItems, orderItems, orders } from '../../database/schema'
 
 export default defineEventHandler(async (event) => {

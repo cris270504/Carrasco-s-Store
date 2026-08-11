@@ -1,5 +1,6 @@
 import type { H3Event } from 'h3'
 import { and, eq } from 'drizzle-orm'
+import { serverSupabaseServiceRole } from '#supabase/server'
 import {
   digitalLicenses,
   orderItems,
