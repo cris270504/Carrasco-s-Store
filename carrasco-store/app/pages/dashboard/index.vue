@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { Order } from '~/types/order'
+
 definePageMeta({ middleware: 'auth' })
 
 const supabase = useSupabaseClient()
@@ -10,6 +12,52 @@ const displayName = computed(() => {
     || 'Cliente'
 })
 
+const { data: orders, pending, error } = await useFetch<Order[]>('/api/orders')
+
+const orderStatusLabels: Record<Order['status'], string> = {
+  pending_payment: 'Pendiente de pago',
+  paid: 'Pagado',
+  processing: 'En proceso',
+  shipped: 'Enviado',
+  completed: 'Completado',
+  cancelled: 'Cancelado',
+  refunded: 'Reembolsado',
+}
+
+const bookingStatusLabels: Record<string, string> = {
+  pending: 'Pendiente de coordinar',
+  confirmed: 'Confirmado',
+  in_progress: 'En curso',
+  completed: 'Completado',
+  cancelled: 'Cancelado',
+}
+
+const licenseStatusLabels: Record<string, string> = {
+  available: 'Preparando entrega',
+  reserved: 'Preparando entrega',
+  delivered: 'Entregada',
+}
+
+const digitalItems = computed(() =>
+  (orders.value ?? []).flatMap(order =>
+    order.items
+      .filter(item => item.itemType === 'digital')
+      .map(item => ({ ...item, orderDate: order.createdAt })),
+  ),
+)
+
+const serviceItems = computed(() =>
+  (orders.value ?? []).flatMap(order =>
+    order.items
+      .filter(item => item.itemType === 'service')
+      .map(item => ({ ...item, orderDate: order.createdAt })),
+  ),
+)
+
+function formatDate(value: string) {
+  return new Date(value).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
 const loggingOut = ref(false)
 
 async function handleLogout() {
@@ -17,26 +65,6 @@ async function handleLogout() {
   await supabase.auth.signOut()
   await navigateTo('/login')
 }
-
-// TODO(Parte 5 - Panel de cliente): reemplazar por datos reales de
-// GET /api/orders, /api/licenses y /api/bookings cuando existan.
-const sections = [
-  {
-    key: 'orders',
-    title: 'Pedidos y envíos',
-    empty: 'Aún no tienes pedidos físicos en camino.',
-  },
-  {
-    key: 'licenses',
-    title: 'Licencias digitales',
-    empty: 'Tus códigos y licencias compradas aparecerán aquí.',
-  },
-  {
-    key: 'bookings',
-    title: 'Servicios agendados',
-    empty: 'No tienes servicios técnicos programados.',
-  },
-] as const
 </script>
 
 <template>
@@ -51,12 +79,62 @@ const sections = [
       </button>
     </header>
 
-    <div class="dashboard__grid">
-      <section v-for="section in sections" :key="section.key" class="dashboard-card">
-        <h2>{{ section.title }}</h2>
-        <div class="dashboard-card__empty">
-          <p>{{ section.empty }}</p>
+    <div v-if="pending" class="dashboard__state">Cargando tu información…</div>
+    <div v-else-if="error" class="dashboard__state">No pudimos cargar tu panel. Intenta recargar la página.</div>
+
+    <div v-else class="dashboard__grid">
+      <section class="dashboard-card">
+        <h2>Pedidos y envíos</h2>
+        <div v-if="orders?.length" class="order-list">
+          <div v-for="order in orders" :key="order.id" class="order-row">
+            <div class="order-row__info">
+              <span class="order-row__id">#{{ order.id.slice(0, 8).toUpperCase() }}</span>
+              <span class="order-row__date">{{ formatDate(order.createdAt) }}</span>
+            </div>
+            <span class="order-row__status" :class="`is-${order.status}`">{{ orderStatusLabels[order.status] }}</span>
+            <span class="order-row__total">S/ {{ Number(order.total).toFixed(2) }}</span>
+          </div>
+        </div>
+        <div v-else class="dashboard-card__empty">
+          <p>Aún no tienes pedidos.</p>
           <NuxtLink to="/catalogo" class="btn btn-outline">Ir al catálogo</NuxtLink>
+        </div>
+      </section>
+
+      <section class="dashboard-card">
+        <h2>Licencias digitales</h2>
+        <div v-if="digitalItems.length" class="order-list">
+          <div v-for="item in digitalItems" :key="item.id" class="order-row">
+            <div class="order-row__info">
+              <span class="order-row__id">{{ item.product.name }}</span>
+              <span class="order-row__date">{{ formatDate(item.orderDate) }}</span>
+            </div>
+            <span class="order-row__status">{{ item.license ? licenseStatusLabels[item.license.status] : 'Preparando entrega' }}</span>
+            <code v-if="item.license?.status === 'delivered'" class="order-row__code">{{ item.license.code }}</code>
+          </div>
+        </div>
+        <div v-else class="dashboard-card__empty">
+          <p>Tus códigos y licencias compradas aparecerán aquí.</p>
+          <NuxtLink to="/catalogo?type=digital" class="btn btn-outline">Ver licencias</NuxtLink>
+        </div>
+      </section>
+
+      <section class="dashboard-card">
+        <h2>Servicios agendados</h2>
+        <div v-if="serviceItems.length" class="order-list">
+          <div v-for="item in serviceItems" :key="item.id" class="order-row">
+            <div class="order-row__info">
+              <span class="order-row__id">{{ item.product.name }}</span>
+              <span class="order-row__date">{{ formatDate(item.orderDate) }}</span>
+            </div>
+            <span class="order-row__status">
+              {{ item.booking ? bookingStatusLabels[item.booking.status] : 'Pendiente de coordinar' }}
+            </span>
+          </div>
+        </div>
+        <div v-else class="dashboard-card__empty">
+          <p>No tienes servicios técnicos programados.</p>
+          <NuxtLink to="/catalogo?type=service" class="btn btn-outline">Ver servicios</NuxtLink>
         </div>
       </section>
     </div>
@@ -88,11 +166,17 @@ const sections = [
 .dashboard__header h1 {
   font-size: 1.6rem;
 }
+.dashboard__state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--color-ink-muted);
+}
 
 .dashboard__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 1.1rem;
+  align-items: start;
 }
 .dashboard-card {
   background: var(--color-surface);
@@ -114,5 +198,70 @@ const sections = [
   color: var(--color-ink-muted);
   font-size: 0.85rem;
   margin: 0 0 0.9rem;
+}
+
+.order-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.order-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.7rem 0.8rem;
+  background: var(--color-bg);
+  border-radius: var(--radius-control);
+  flex-wrap: wrap;
+}
+.order-row__info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.order-row__id {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.order-row__date {
+  font-size: 0.72rem;
+  color: var(--color-ink-faint);
+}
+.order-row__status {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: var(--color-accent-tint);
+  color: var(--color-accent);
+  white-space: nowrap;
+}
+.order-row__status.is-paid,
+.order-row__status.is-completed {
+  background: var(--color-physical-tint);
+  color: var(--color-physical-ink);
+}
+.order-row__status.is-cancelled,
+.order-row__status.is-refunded {
+  background: var(--color-danger-tint);
+  color: var(--color-danger);
+}
+.order-row__total {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.order-row__code {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  background: var(--color-accent-tint);
+  color: var(--color-accent-hover);
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
 }
 </style>
