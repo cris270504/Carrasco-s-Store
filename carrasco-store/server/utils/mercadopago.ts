@@ -28,7 +28,7 @@ export async function createMpPreference(params: {
 }) {
   const token = getAccessToken()
 
-  return $fetch<{ id: string, init_point: string, sandbox_init_point?: string }>(`${MP_API_BASE}/checkout/preferences`, {
+  return $fetch<{ id: string, init_point: string }>(`${MP_API_BASE}/checkout/preferences`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
     body: {
