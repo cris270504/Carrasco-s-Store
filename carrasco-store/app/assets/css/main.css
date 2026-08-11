@@ -42,6 +42,8 @@
   --radius-control: 8px;
   --shadow-card: 0 1px 2px rgba(23, 26, 28, 0.04);
   --shadow-card-hover: 0 8px 20px rgba(23, 26, 28, 0.08);
+
+  color-scheme: light;
 }
 
 :root[data-theme='dark'] {
@@ -75,6 +77,8 @@
 
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35);
   --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.5);
+
+  color-scheme: dark;
 }
 
 * {
@@ -113,9 +117,25 @@ button {
   font-family: var(--font-body);
 }
 
+input,
+textarea,
+select {
+  color: inherit;
+}
+
 ::selection {
   background: var(--color-accent-tint);
   color: var(--color-accent-hover);
+}
+
+/* Transicion de pagina (NuxtPage) — fundido suave entre rutas */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.2s ease;
+}
+.page-enter-from,
+.page-leave-to {
+  opacity: 0;
 }
 
 /* Botones base reutilizados en todo el sitio */

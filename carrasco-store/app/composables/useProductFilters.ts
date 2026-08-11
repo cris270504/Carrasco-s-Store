@@ -16,7 +16,7 @@ export function useProductFilters() {
   const router = useRouter()
 
   const filters = reactive<ProductFilters>({
-    type: (route.query.type as string) || '',
+    type: (route.query.type as ProductFilters['type']) || '',
     categoryId: (route.query.categoryId as string) || '',
     brand: (route.query.brand as string) || '',
     minPrice: (route.query.minPrice as string) || '',

@@ -183,6 +183,7 @@ async function handleDelete(product: AdminProductListItem) {
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-control);
   background: var(--color-surface);
+  color: var(--color-ink);
   min-width: 220px;
 }
 

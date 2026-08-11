@@ -126,6 +126,7 @@ async function handleLogin() {
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-control);
   background: var(--color-bg);
+  color: var(--color-ink);
 }
 .auth-card input:focus {
   outline: none;
