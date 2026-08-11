@@ -29,19 +29,17 @@ const sortedProducts = computed(() => {
   }
 })
 
-function handleAddToCart(product: Product) {
-  // TODO(Parte 4 - Carrito): sincronizar tambien con POST /api/cart/items
-  addItem({
-    productId: product.id,
-    itemType: product.type,
-    name: product.name,
-    slug: product.slug,
-    image: product.images?.[0] ?? null,
-    variantId: null,
-    variantLabel: null,
-    unitPrice: Number(product.price),
-    preferredModality: product.serviceDetail?.defaultModality ?? null,
-  })
+async function handleAddToCart(product: Product) {
+  try {
+    await addItem({
+      productId: product.id,
+      variantId: null,
+      preferredModality: product.serviceDetail?.defaultModality ?? null,
+    })
+  }
+  catch {
+    // TODO(Parte 4 - Carrito): feedback visual de error al agregar
+  }
 }
 </script>
 

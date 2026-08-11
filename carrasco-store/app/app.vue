@@ -1,3 +1,8 @@
+<script setup lang="ts">
+const { fetchCart } = useCart()
+onMounted(() => { fetchCart() })
+</script>
+
 <template>
   <div class="app-shell">
     <AppHeader />

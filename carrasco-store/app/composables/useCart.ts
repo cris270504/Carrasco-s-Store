@@ -12,44 +12,51 @@ export interface CartLine {
   preferredModality: 'remote' | 'in_person' | null
 }
 
-// Estado de carrito en memoria del cliente. Su forma (itemType, variantId,
-// preferredModality...) espeja cartItems de server/database/schema.ts para
-// que la migración a POST/PATCH /api/cart/items (Parte 4) sea directa.
+interface CartResponse {
+  id: string
+  items: CartLine[]
+}
+
+export interface AddCartItemPayload {
+  productId: string
+  variantId?: string | null
+  quantity?: number
+  preferredModality?: 'remote' | 'in_person' | null
+}
+
+// Estado compartido en el cliente, respaldado por server/api/cart/*.
 export function useCart() {
-  const items = useState<CartLine[]>('cart-items', () => [])
+  const cart = useState<CartResponse | null>('cart', () => null)
+  const loading = useState('cart-loading', () => false)
 
-  function lineKey(productId: string, variantId: string | null) {
-    return `${productId}:${variantId ?? ''}`
-  }
-
-  function addItem(line: Omit<CartLine, 'id' | 'quantity'> & { quantity?: number }) {
-    const key = lineKey(line.productId, line.variantId)
-    const existing = items.value.find(i => lineKey(i.productId, i.variantId) === key)
-
-    if (existing) {
-      existing.quantity += line.quantity ?? 1
-      return
+  async function fetchCart() {
+    loading.value = true
+    try {
+      cart.value = await $fetch<CartResponse>('/api/cart')
     }
-
-    items.value.push({ ...line, id: key, quantity: line.quantity ?? 1 })
-  }
-
-  function removeItem(id: string) {
-    items.value = items.value.filter(i => i.id !== id)
-  }
-
-  function setQuantity(id: string, quantity: number) {
-    const line = items.value.find(i => i.id === id)
-    if (!line) return
-    if (quantity <= 0) {
-      removeItem(id)
-      return
+    catch {
+      // sin backend disponible, el carrito queda vacio en vez de romper la UI
     }
-    line.quantity = quantity
+    finally {
+      loading.value = false
+    }
   }
 
+  async function addItem(payload: AddCartItemPayload) {
+    cart.value = await $fetch<CartResponse>('/api/cart/items', { method: 'POST', body: payload })
+  }
+
+  async function setQuantity(itemId: string, quantity: number) {
+    cart.value = await $fetch<CartResponse>(`/api/cart/items/${itemId}`, { method: 'PATCH', body: { quantity } })
+  }
+
+  async function removeItem(itemId: string) {
+    cart.value = await $fetch<CartResponse>(`/api/cart/items/${itemId}`, { method: 'DELETE' })
+  }
+
+  const items = computed(() => cart.value?.items ?? [])
   const count = computed(() => items.value.reduce((sum, i) => sum + i.quantity, 0))
   const subtotal = computed(() => items.value.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0))
 
-  return { items, addItem, removeItem, setQuantity, count, subtotal }
+  return { items, count, subtotal, loading, fetchCart, addItem, setQuantity, removeItem }
 }
