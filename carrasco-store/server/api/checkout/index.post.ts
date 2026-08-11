@@ -63,5 +63,7 @@ export default defineEventHandler(async (event) => {
 
   await db.delete(cartItems).where(eq(cartItems.cartId, cart.id))
 
-  return { orderId: order!.id, initPoint: preference.init_point }
+  // sandbox_init_point solo viene presente cuando la preferencia se crea con
+  // credenciales/cuenta de prueba; hay que usarlo en vez de init_point para probar.
+  return { orderId: order!.id, initPoint: preference.sandbox_init_point || preference.init_point }
 })
