@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
     await db.delete(cartItems).where(eq(cartItems.id, id))
   }
   else {
-    await db.update(cartItems).set({ quantity: Math.floor(quantity) }).where(eq(cartItems.id, id))
+    await db.update(cartItems).set({ quantity: Math.min(Math.floor(quantity), 50) }).where(eq(cartItems.id, id))
   }
 
   return getCartResponse(cart.id)

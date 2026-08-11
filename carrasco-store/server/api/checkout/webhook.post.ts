@@ -14,6 +14,10 @@ export default defineEventHandler(async (event) => {
     return { received: true }
   }
 
+  if (!verifyMpWebhookSignature(event, String(paymentId))) {
+    throw createError({ statusCode: 401, statusMessage: 'Firma de webhook invalida' })
+  }
+
   const payment = await getMpPayment(String(paymentId))
   const orderId = payment.external_reference
   if (!orderId) {

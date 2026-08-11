@@ -6,5 +6,16 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
   supabase: {
     redirect: false
-  }
+  },
+  nitro: {
+    routeRules: {
+      '/**': {
+        headers: {
+          'X-Content-Type-Options': 'nosniff',
+          'X-Frame-Options': 'DENY',
+          'Referrer-Policy': 'strict-origin-when-cross-origin',
+        },
+      },
+    },
+  },
 })

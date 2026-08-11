@@ -14,28 +14,43 @@ import {
 type OrderItem = typeof orderItems.$inferSelect
 
 // Se dispara desde el webhook de Mercado Pago cuando el pago queda 'approved'.
-// El guard sobre order.status hace la funcion idempotente ante reintentos del webhook.
+// El UPDATE...WHERE status='pending_payment' es atomico: si dos notificaciones
+// llegan casi simultaneas para la misma orden, solo una consigue la fila (evita
+// duplicar descuento de stock / entrega de licencia / creacion de booking).
 export async function fulfillOrder(event: H3Event, orderId: string) {
-  const order = await db.query.orders.findFirst({ where: eq(orders.id, orderId) })
-  if (!order || order.status !== 'pending_payment') {
+  const claimed = await db.update(orders)
+    .set({ status: 'processing' })
+    .where(and(eq(orders.id, orderId), eq(orders.status, 'pending_payment')))
+    .returning()
+
+  const order = claimed[0]
+  if (!order) {
     return
   }
 
-  const items = await db.query.orderItems.findMany({ where: eq(orderItems.orderId, orderId) })
+  try {
+    const items = await db.query.orderItems.findMany({ where: eq(orderItems.orderId, orderId) })
 
-  for (const item of items) {
-    if (item.itemType === 'physical') {
-      await fulfillPhysical(item)
+    for (const item of items) {
+      if (item.itemType === 'physical') {
+        await fulfillPhysical(item)
+      }
+      else if (item.itemType === 'digital') {
+        await fulfillDigital(event, item, order.userId)
+      }
+      else if (item.itemType === 'service') {
+        await fulfillService(item, order.userId)
+      }
     }
-    else if (item.itemType === 'digital') {
-      await fulfillDigital(event, item, order.userId)
-    }
-    else if (item.itemType === 'service') {
-      await fulfillService(item, order.userId)
-    }
+
+    await db.update(orders).set({ status: 'paid' }).where(eq(orders.id, orderId))
   }
-
-  await db.update(orders).set({ status: 'paid' }).where(eq(orders.id, orderId))
+  catch (err) {
+    // Revierte el claim para que un reintento del webhook pueda volver a procesarla
+    // en vez de quedar atascada en 'processing' para siempre.
+    await db.update(orders).set({ status: 'pending_payment' }).where(eq(orders.id, orderId))
+    throw err
+  }
 }
 
 async function fulfillPhysical(item: OrderItem) {
@@ -75,8 +90,7 @@ async function fulfillDigital(event: H3Event, item: OrderItem, userId: string) {
     const { data, error } = await supabase.auth.admin.getUserById(userId)
     if (error || !data.user?.email) throw new Error('sin email de usuario')
 
-    // TODO: cuando exista cifrado a nivel de aplicacion, desencriptar license.code aqui antes de enviarlo
-    await sendLicenseEmail({ to: data.user.email, productName: product.name, code: license.code })
+    await sendLicenseEmail({ to: data.user.email, productName: product.name, code: decryptLicenseCode(license.code) })
 
     await db.update(digitalLicenses)
       .set({ status: 'delivered', deliveredAt: new Date() })

@@ -1,8 +1,10 @@
 import { eq } from 'drizzle-orm'
 import { serverSupabaseUser } from '#supabase/server'
-import { cartItems, orderItems, orders } from '../../database/schema'
+import { cartItems, orderItems, orders, productVariants, products } from '../../database/schema'
 
 export default defineEventHandler(async (event) => {
+  enforceRateLimit(event, { key: 'checkout', limit: 5, windowMs: 60_000 })
+
   const user = await serverSupabaseUser(event).catch(() => null)
   if (!user) {
     throw createError({ statusCode: 401, statusMessage: 'Debes iniciar sesion para pagar' })
@@ -13,6 +15,21 @@ export default defineEventHandler(async (event) => {
 
   if (cartData.items.length === 0) {
     throw createError({ statusCode: 400, statusMessage: 'El carrito esta vacio' })
+  }
+
+  for (const item of cartData.items) {
+    if (item.itemType !== 'physical') continue
+
+    const available = item.variantId
+      ? (await db.query.productVariants.findFirst({ where: eq(productVariants.id, item.variantId) }))?.stock
+      : (await db.query.products.findFirst({ where: eq(products.id, item.productId) }))?.stock
+
+    if ((available ?? 0) < item.quantity) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: `Stock insuficiente para "${item.name}" (disponible: ${available ?? 0})`,
+      })
+    }
   }
 
   const subtotal = cartData.items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0)

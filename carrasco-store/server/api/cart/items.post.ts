@@ -3,6 +3,8 @@ import { isValidProductType } from '../../../shared/utils/productTypes'
 import { cartItems } from '../../database/schema'
 
 export default defineEventHandler(async (event) => {
+  enforceRateLimit(event, { key: 'cart-add', limit: 30, windowMs: 60_000 })
+
   const body = await readBody(event)
 
   if (!body?.productId || typeof body.productId !== 'string') {
@@ -11,7 +13,7 @@ export default defineEventHandler(async (event) => {
 
   const variantId = typeof body.variantId === 'string' ? body.variantId : null
   const rawQuantity = Number(body.quantity)
-  const quantity = Number.isFinite(rawQuantity) && rawQuantity > 0 ? Math.floor(rawQuantity) : 1
+  const quantity = Number.isFinite(rawQuantity) && rawQuantity > 0 ? Math.min(Math.floor(rawQuantity), 50) : 1
 
   const found = await getProductForCart(body.productId, variantId)
   if (!found) {
