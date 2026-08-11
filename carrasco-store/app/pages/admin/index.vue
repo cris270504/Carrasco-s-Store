@@ -1,5 +1,5 @@
 <script setup lang="ts">
-definePageMeta({ layout: 'admin', middleware: 'auth' })
+definePageMeta({ layout: 'admin', middleware: 'admin' })
 
 // TODO: reemplazar por GET /api/admin/metrics cuando exista el endpoint.
 const metrics = [

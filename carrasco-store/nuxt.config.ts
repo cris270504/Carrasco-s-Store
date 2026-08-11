@@ -17,6 +17,11 @@ export default defineNuxtConfig({
   supabase: {
     redirect: false
   },
+  runtimeConfig: {
+    public: {
+      adminEmails: process.env.ADMIN_EMAILS || '',
+    },
+  },
   nitro: {
     routeRules: {
       '/**': {
