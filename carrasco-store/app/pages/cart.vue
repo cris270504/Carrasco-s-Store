@@ -101,6 +101,7 @@ function handleCheckout() {
         <button type="button" class="btn btn-primary cart-summary__submit" @click="handleCheckout">
           Continuar al pago
         </button>
+        <p class="cart-summary__trust">🔒 Pago seguro procesado con Mercado Pago</p>
         <NuxtLink to="/catalogo" class="cart-summary__continue">Seguir comprando</NuxtLink>
       </aside>
     </div>
@@ -309,10 +310,16 @@ function handleCheckout() {
   width: 100%;
   margin-top: 0.9rem;
 }
+.cart-summary__trust {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--color-ink-faint);
+  margin: 0.7rem 0 0;
+}
 .cart-summary__continue {
   display: block;
   text-align: center;
-  margin-top: 0.7rem;
+  margin-top: 0.5rem;
   font-size: 0.85rem;
   color: var(--color-ink-muted);
   text-decoration: none;
