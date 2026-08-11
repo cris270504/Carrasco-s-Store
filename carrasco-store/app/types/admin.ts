@@ -1,4 +1,4 @@
-import type { ProductType } from '../../shared/utils/productTypes'
+import type { ProductType } from '#shared/utils/productTypes'
 
 export interface AdminProductListItem {
   id: string

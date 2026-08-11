@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PRODUCT_TYPES, type ProductType } from '../../../shared/utils/productTypes'
+import { PRODUCT_TYPES, type ProductType } from '#shared/utils/productTypes'
 import type { AdminCategory, AdminProductDetail, AdminProductVariant } from '../../types/admin'
 
 const props = defineProps<{ productId?: string }>()
