@@ -3,6 +3,19 @@ import type { Product } from '~/types/product'
 
 const route = useRoute()
 const { addItem } = useCart()
+const { isFavorite, toggleFavorite } = useFavorites()
+const togglingFavorite = ref(false)
+
+async function handleToggleFavorite() {
+  if (!product.value) return
+  togglingFavorite.value = true
+  try {
+    await toggleFavorite(product.value.id)
+  }
+  finally {
+    togglingFavorite.value = false
+  }
+}
 
 const { data: product, error } = await useFetch<Product>(`/api/products/${route.params.slug}`)
 
@@ -115,17 +128,33 @@ async function handleAdd() {
 
         <div class="ticket-divider" />
 
-        <button
-          type="button"
-          class="btn btn-primary product-info__cta"
-          :disabled="isOutOfStock || adding"
-          @click="handleAdd"
-        >
-          <template v-if="adding">Agregando…</template>
-          <template v-else-if="isOutOfStock">Agotado</template>
-          <template v-else-if="product.type === 'service'">Agendar</template>
-          <template v-else>Agregar al carrito</template>
-        </button>
+        <div class="product-info__actions">
+          <button
+            type="button"
+            class="btn btn-primary product-info__cta"
+            :disabled="isOutOfStock || adding"
+            @click="handleAdd"
+          >
+            <template v-if="adding">Agregando…</template>
+            <template v-else-if="isOutOfStock">Agotado</template>
+            <template v-else-if="product.type === 'service'">Agendar</template>
+            <template v-else>Agregar al carrito</template>
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline product-info__favorite"
+            :class="{ 'is-active': isFavorite(product.id) }"
+            :disabled="togglingFavorite"
+            @click="handleToggleFavorite"
+          >
+            <svg width="18" height="18" viewBox="0 0 20 20" :fill="isFavorite(product.id) ? 'currentColor' : 'none'">
+              <path
+                d="M10 17.3 3.6 11c-2-2-2-5.2 0-7.1 1.9-1.9 4.9-1.7 6.4.4 1.5-2.1 4.5-2.3 6.4-.4 2 1.9 2 5.1 0 7.1L10 17.3Z"
+                stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
         <p v-if="addedMsg" class="product-info__added" role="status">Agregado al carrito ✓</p>
       </div>
     </div>
@@ -258,10 +287,24 @@ async function handleAdd() {
   margin: 0 0 1rem;
 }
 
+.product-info__actions {
+  display: flex;
+  gap: 0.6rem;
+}
 .product-info__cta {
-  width: 100%;
+  flex: 1;
   font-size: 0.98rem;
   padding: 0.85rem;
+}
+.product-info__favorite {
+  flex-shrink: 0;
+  width: 48px;
+  padding: 0;
+  color: var(--color-ink-muted);
+}
+.product-info__favorite.is-active {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
 }
 .product-info__added {
   text-align: center;

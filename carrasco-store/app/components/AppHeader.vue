@@ -1,6 +1,9 @@
 <script setup lang="ts">
 const user = useSupabaseUser()
 const { count } = useCart()
+const { theme, init, toggle } = useTheme()
+
+onMounted(() => { init() })
 </script>
 
 <template>
@@ -13,6 +16,36 @@ const { count } = useCart()
       </nav>
 
       <div class="app-header__actions">
+        <button
+          type="button"
+          class="app-header__icon-link"
+          :aria-label="theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
+          @click="toggle"
+        >
+          <svg v-if="theme === 'dark'" width="19" height="19" viewBox="0 0 20 20" fill="none">
+            <circle cx="10" cy="10" r="4" stroke="currentColor" stroke-width="1.4" />
+            <path
+              d="M10 2v1.6M10 16.4V18M18 10h-1.6M3.6 10H2M15.5 4.5l-1.1 1.1M5.6 14.4l-1.1 1.1M15.5 15.5l-1.1-1.1M5.6 5.6 4.5 4.5"
+              stroke="currentColor" stroke-width="1.4" stroke-linecap="round"
+            />
+          </svg>
+          <svg v-else width="19" height="19" viewBox="0 0 20 20" fill="none">
+            <path
+              d="M17 11.5A7.5 7.5 0 0 1 8.5 3 7.5 7.5 0 1 0 17 11.5Z"
+              stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+
+        <NuxtLink to="/favoritos" class="app-header__icon-link" aria-label="Favoritos">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path
+              d="M10 17.3 3.6 11c-2-2-2-5.2 0-7.1 1.9-1.9 4.9-1.7 6.4.4 1.5-2.1 4.5-2.3 6.4-.4 2 1.9 2 5.1 0 7.1L10 17.3Z"
+              stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"
+            />
+          </svg>
+        </NuxtLink>
+
         <NuxtLink to="/cart" class="app-header__icon-link" aria-label="Carrito">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
             <path
@@ -94,7 +127,10 @@ const { count } = useCart()
   width: 36px;
   height: 36px;
   border-radius: 50%;
+  border: none;
+  background: none;
   color: var(--color-ink-muted);
+  cursor: pointer;
 }
 .app-header__icon-link:hover {
   background: var(--color-bg);

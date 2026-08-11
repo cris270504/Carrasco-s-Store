@@ -11,6 +11,7 @@ import {
   pgEnum,
   jsonb,
   index,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core'
  
 // ============================================================
@@ -169,7 +170,20 @@ export const serviceBookings = pgTable('service_bookings', {
   status: bookingStatusEnum('status').notNull().default('pending'),
   notes: text('notes'),
 }).enableRLS()
- 
+
+// ============================================================
+// FAVORITOS
+// ============================================================
+export const favorites = pgTable('favorites', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull(),
+  productId: uuid('product_id').notNull().references(() => products.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  userProductUnique: uniqueIndex('favorites_user_product_unique').on(table.userId, table.productId),
+  userIdx: index('favorites_user_idx').on(table.userId),
+})).enableRLS()
+
 // ============================================================
 // RELATIONS (para queries anidadas con db.query.products.findMany({ with: {...} }))
 // ============================================================
@@ -216,8 +230,12 @@ export const digitalLicensesRelations = relations(digitalLicenses, ({ one }) => 
 }))
 
 export const serviceDetailsRelations = relations(serviceDetails, ({ one }) => ({
-  product: one(products, { 
-    fields: [serviceDetails.productId], 
-    references: [products.id] 
+  product: one(products, {
+    fields: [serviceDetails.productId],
+    references: [products.id]
   }),
+}))
+
+export const favoritesRelations = relations(favorites, ({ one }) => ({
+  product: one(products, { fields: [favorites.productId], references: [products.id] }),
 }))

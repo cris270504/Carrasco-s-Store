@@ -7,6 +7,19 @@ const props = withDefaults(defineProps<{ product: Product, view?: 'grid' | 'list
 
 const emit = defineEmits<{ addToCart: [product: Product] }>()
 
+const { isFavorite, toggleFavorite } = useFavorites()
+const togglingFavorite = ref(false)
+
+async function handleToggleFavorite() {
+  togglingFavorite.value = true
+  try {
+    await toggleFavorite(props.product.id)
+  }
+  finally {
+    togglingFavorite.value = false
+  }
+}
+
 const typeMeta = computed(() => {
   switch (props.product.type) {
     case 'service':
@@ -56,6 +69,22 @@ const isOutOfStock = computed(() => {
       <div v-else class="product-card__image-placeholder" :class="typeMeta.className" />
     </NuxtLink>
 
+    <button
+      type="button"
+      class="product-card__favorite"
+      :class="{ 'is-active': isFavorite(product.id) }"
+      :disabled="togglingFavorite"
+      :aria-label="isFavorite(product.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'"
+      @click="handleToggleFavorite"
+    >
+      <svg width="18" height="18" viewBox="0 0 20 20" :fill="isFavorite(product.id) ? 'currentColor' : 'none'">
+        <path
+          d="M10 17.3 3.6 11c-2-2-2-5.2 0-7.1 1.9-1.9 4.9-1.7 6.4.4 1.5-2.1 4.5-2.3 6.4-.4 2 1.9 2 5.1 0 7.1L10 17.3Z"
+          stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"
+        />
+      </svg>
+    </button>
+
     <div class="product-card__body">
       <p class="product-card__eyebrow">
         <span class="product-card__badge" :class="typeMeta.className">{{ typeMeta.label }}</span>
@@ -93,6 +122,7 @@ const isOutOfStock = computed(() => {
 
 <style scoped>
 .product-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   background: var(--color-surface);
@@ -101,6 +131,34 @@ const isOutOfStock = computed(() => {
   overflow: hidden;
   box-shadow: var(--shadow-card);
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.product-card__favorite {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--color-ink-muted);
+  cursor: pointer;
+  backdrop-filter: blur(2px);
+}
+.product-card__favorite:hover {
+  color: var(--color-danger);
+}
+.product-card__favorite.is-active {
+  color: var(--color-danger);
+}
+.product-card__favorite:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 .product-card:hover {
   transform: translateY(-3px);

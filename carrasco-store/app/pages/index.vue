@@ -262,7 +262,7 @@ const heroFloaters = [
 .hero {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(180deg, #10131a 0%, var(--color-ink) 100%);
+  background: linear-gradient(180deg, #10131a 0%, #171a1c 100%);
   color: #fff;
   padding: 5rem 1.5rem;
 }

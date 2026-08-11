@@ -1,6 +1,10 @@
 <script setup lang="ts">
 const { fetchCart } = useCart()
-onMounted(() => { fetchCart() })
+const { fetchFavorites } = useFavorites()
+onMounted(() => {
+  fetchCart()
+  fetchFavorites()
+})
 </script>
 
 <template>

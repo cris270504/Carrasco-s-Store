@@ -146,7 +146,7 @@ async function handleAddToCart(product: Product) {
 
 <style scoped>
 .catalog-hero {
-  background: linear-gradient(135deg, var(--color-ink) 0%, #2d3238 100%);
+  background: linear-gradient(135deg, #171a1c 0%, #2d3238 100%);
   color: #fff;
   padding: 2.75rem 1.5rem;
   text-align: center;
