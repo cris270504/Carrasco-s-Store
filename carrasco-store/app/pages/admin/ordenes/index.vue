@@ -1,0 +1,233 @@
+<script setup lang="ts">
+definePageMeta({ layout: 'admin', middleware: 'auth' })
+
+interface AdminOrder {
+  id: string
+  customer: string
+  items: string
+  total: number
+  paymentStatus: 'approved' | 'pending' | 'rejected'
+  status: 'pending_payment' | 'paid' | 'processing' | 'shipped' | 'completed' | 'cancelled' | 'refunded'
+  date: string
+}
+
+// TODO: reemplazar por datos reales cuando exista GET /api/admin/orders.
+const { data: fetchedOrders } = await useFetch<AdminOrder[]>('/api/admin/orders', {
+  default: () => [],
+})
+
+const mockOrders: AdminOrder[] = [
+  { id: '195EB1A3', customer: 'Cristopher Carrasco', items: '2x Disco Duro Sólido 1TB', total: 605.00, paymentStatus: 'pending', status: 'pending_payment', date: '2026-08-11' },
+  { id: 'FD6474AB', customer: 'Ana Torres', items: '1x Disco Duro Sólido 1TB', total: 310.00, paymentStatus: 'approved', status: 'paid', date: '2026-08-10' },
+  { id: '9C21F0E4', customer: 'Luis Ramírez', items: '1x Formateo e Instalación', total: 89.90, paymentStatus: 'approved', status: 'shipped', date: '2026-08-09' },
+  { id: '7B8A6D12', customer: 'María Quispe', items: '1x Suite Ofimática 2026', total: 1250.00, paymentStatus: 'approved', status: 'completed', date: '2026-08-07' },
+  { id: '2E4C9A31', customer: 'Jorge Salinas', items: '1x Mouse Inalámbrico', total: 89.90, paymentStatus: 'rejected', status: 'cancelled', date: '2026-08-06' },
+]
+
+const orders = computed(() => fetchedOrders.value?.length ? fetchedOrders.value : mockOrders)
+
+const statusLabels: Record<AdminOrder['status'], string> = {
+  pending_payment: 'Pendiente de pago',
+  paid: 'Pagado',
+  processing: 'En proceso',
+  shipped: 'Enviado',
+  completed: 'Completado',
+  cancelled: 'Cancelado',
+  refunded: 'Reembolsado',
+}
+const paymentLabels: Record<AdminOrder['paymentStatus'], string> = {
+  approved: 'Aprobado',
+  pending: 'Pendiente',
+  rejected: 'Rechazado',
+}
+
+const statusFilter = ref<'all' | AdminOrder['status']>('all')
+const filtered = computed(() =>
+  orders.value.filter(o => statusFilter.value === 'all' || o.status === statusFilter.value),
+)
+
+const filterOptions = [
+  { v: 'all', l: 'Todas' },
+  { v: 'pending_payment', l: 'Pendientes' },
+  { v: 'paid', l: 'Pagadas' },
+  { v: 'shipped', l: 'Enviadas' },
+  { v: 'completed', l: 'Completadas' },
+  { v: 'cancelled', l: 'Canceladas' },
+] as const
+</script>
+
+<template>
+  <div class="orders-page">
+    <header class="page-header">
+      <p class="page-header__eyebrow">Ventas</p>
+      <h1>Órdenes</h1>
+    </header>
+
+    <div class="toolbar">
+      <button
+        v-for="opt in filterOptions"
+        :key="opt.v"
+        type="button"
+        class="toolbar__tab"
+        :class="{ 'is-active': statusFilter === opt.v }"
+        @click="statusFilter = opt.v"
+      >
+        {{ opt.l }}
+      </button>
+    </div>
+
+    <div class="panel">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Orden</th>
+            <th>Cliente</th>
+            <th>Ítems</th>
+            <th>Total</th>
+            <th>Pago (Mercado Pago)</th>
+            <th>Estado</th>
+            <th>Fecha</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="order in filtered" :key="order.id">
+            <td class="admin-table__mono">#{{ order.id }}</td>
+            <td>{{ order.customer }}</td>
+            <td class="orders-page__items">{{ order.items }}</td>
+            <td class="admin-table__mono">S/ {{ order.total.toFixed(2) }}</td>
+            <td><span class="payment-badge" :class="`is-${order.paymentStatus}`">{{ paymentLabels[order.paymentStatus] }}</span></td>
+            <td><span class="status-badge" :class="`is-${order.status}`">{{ statusLabels[order.status] }}</span></td>
+            <td class="orders-page__date">{{ order.date }}</td>
+          </tr>
+          <tr v-if="filtered.length === 0">
+            <td colspan="7" class="orders-page__empty">Sin órdenes para este filtro.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.page-header {
+  margin-bottom: 1.5rem;
+}
+.page-header__eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 0.25rem;
+}
+.page-header h1 {
+  font-size: 1.5rem;
+}
+
+.toolbar {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.toolbar__tab {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border-strong);
+  background: transparent;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+}
+.toolbar__tab.is-active {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+}
+
+.panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: 1.1rem;
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.admin-table th {
+  text-align: left;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-ink-faint);
+  padding: 0 0.6rem 0.6rem;
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+.admin-table td {
+  padding: 0.75rem 0.6rem;
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+.admin-table tr:last-child td {
+  border-bottom: none;
+}
+.admin-table__mono {
+  font-family: var(--font-mono);
+}
+
+.orders-page__items {
+  color: var(--color-ink-muted);
+  white-space: normal;
+  min-width: 160px;
+}
+.orders-page__date {
+  color: var(--color-ink-faint);
+  font-size: 0.8rem;
+}
+.orders-page__empty {
+  text-align: center;
+  color: var(--color-ink-muted);
+  padding: 2rem;
+}
+
+.payment-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+}
+.payment-badge.is-approved { background: var(--color-physical-tint); color: var(--color-physical-ink); }
+.payment-badge.is-pending { background: var(--color-service-tint); color: var(--color-service-ink); }
+.payment-badge.is-rejected { background: var(--color-danger-tint); color: var(--color-danger); }
+
+.status-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: var(--color-accent-tint);
+  color: var(--color-accent);
+}
+.status-badge.is-paid,
+.status-badge.is-completed {
+  background: var(--color-physical-tint);
+  color: var(--color-physical-ink);
+}
+.status-badge.is-shipped {
+  background: var(--color-digital-tint);
+  color: var(--color-digital-ink);
+}
+.status-badge.is-cancelled,
+.status-badge.is-refunded {
+  background: var(--color-danger-tint);
+  color: var(--color-danger);
+}
+</style>
