@@ -1,0 +1,177 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root {
+  /* Superficies */
+  --color-bg: #eff1ee;
+  --color-surface: #ffffff;
+  --color-ink: #171a1c;
+  --color-ink-muted: #5b6168;
+  --color-ink-faint: #8b9096;
+  --color-border: #dee1dc;
+  --color-border-strong: #c4c8c1;
+
+  /* Acento primario */
+  --color-accent: #2b4fe0;
+  --color-accent-hover: #1f3bb0;
+  --color-accent-tint: #e7ecfb;
+
+  /* Semántica por tipo de ítem */
+  --color-service: #c46a1f;
+  --color-service-tint: #fbeedd;
+  --color-service-ink: #7a3f0e;
+
+  --color-physical: #12806a;
+  --color-physical-tint: #dff3ee;
+  --color-physical-ink: #0b4f42;
+
+  --color-digital: #6a46c9;
+  --color-digital-tint: #efe9fb;
+  --color-digital-ink: #432e85;
+
+  --color-danger: #c23b32;
+  --color-danger-tint: #fbe9e7;
+  --color-success: #1f8a55;
+
+  /* Tipografía */
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Layout */
+  --radius-card: 12px;
+  --radius-control: 8px;
+  --shadow-card: 0 1px 2px rgba(23, 26, 28, 0.04);
+  --shadow-card-hover: 0 8px 20px rgba(23, 26, 28, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  font-family: var(--font-body);
+}
+
+::selection {
+  background: var(--color-accent-tint);
+  color: var(--color-accent-hover);
+}
+
+/* Botones base reutilizados en todo el sitio */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.65rem 1.1rem;
+  border-radius: var(--radius-control);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+.btn:active {
+  transform: scale(0.98);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-primary {
+  background: var(--color-accent);
+  color: #fff;
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+}
+
+.btn-outline {
+  background: transparent;
+  border-color: var(--color-border-strong);
+  color: var(--color-ink);
+}
+.btn-outline:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-ink-muted);
+  padding: 0.5rem 0.7rem;
+}
+.btn-ghost:hover:not(:disabled) {
+  color: var(--color-ink);
+  background: var(--color-border);
+}
+
+/* Divisor "ticket perforado" — firma visual de las tarjetas de producto */
+.ticket-divider {
+  position: relative;
+  height: 1px;
+  margin: 0.85rem 0;
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--color-border) 0,
+    var(--color-border) 5px,
+    transparent 5px,
+    transparent 10px
+  );
+}
+.ticket-divider::before,
+.ticket-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+}
+.ticket-divider::before {
+  left: -1.5rem;
+}
+.ticket-divider::after {
+  right: -1.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

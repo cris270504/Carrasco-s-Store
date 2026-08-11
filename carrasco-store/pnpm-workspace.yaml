@@ -1,0 +1,4 @@
+allowBuilds:
+  esbuild: true
+minimumReleaseAgeExclude:
+  - '@nuxtjs/supabase@2.0.10'
