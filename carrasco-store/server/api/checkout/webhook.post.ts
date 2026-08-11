@@ -24,9 +24,12 @@ export default defineEventHandler(async (event) => {
     .set({
       mpPaymentId: String(payment.id),
       paymentStatus: payment.status,
-      status: payment.status === 'approved' ? 'paid' : 'pending_payment',
     })
     .where(eq(orders.id, orderId))
+
+  if (payment.status === 'approved') {
+    await fulfillOrder(event, orderId)
+  }
 
   return { received: true }
 })
