@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import type { Product } from '~/types/product'
 
-const props = defineProps<{ product: Product }>()
+const props = withDefaults(defineProps<{ product: Product, view?: 'grid' | 'list' }>(), {
+  view: 'grid',
+})
 
 const emit = defineEmits<{ addToCart: [product: Product] }>()
 
@@ -43,7 +45,7 @@ const isOutOfStock = computed(() => {
 </script>
 
 <template>
-  <article class="product-card">
+  <article class="product-card" :class="`product-card--${view}`">
     <NuxtLink :to="`/producto/${product.slug}`" class="product-card__image-link">
       <img
         v-if="product.images?.[0]"
@@ -104,6 +106,25 @@ const isOutOfStock = computed(() => {
   transform: translateY(-3px);
   box-shadow: var(--shadow-card-hover);
   border-color: var(--color-border-strong);
+}
+
+.product-card--list {
+  flex-direction: row;
+}
+.product-card--list:hover {
+  transform: none;
+}
+.product-card--list .product-card__image-link {
+  width: 180px;
+  flex-shrink: 0;
+  aspect-ratio: auto;
+}
+.product-card--list .product-card__body {
+  flex: 1;
+  justify-content: center;
+}
+.product-card--list .ticket-divider {
+  margin: 0.6rem 0;
 }
 
 .product-card__image-link {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ProductFilters } from '~/composables/useProductFilters'
 
-defineProps<{ filters: ProductFilters }>()
+const props = defineProps<{ filters: ProductFilters }>()
 const emit = defineEmits<{ reset: [] }>()
 
 const typeOptions = [
@@ -10,13 +10,38 @@ const typeOptions = [
   { value: 'digital', label: 'Digitales' },
   { value: 'service', label: 'Servicios' },
 ] as const
+
+// Techo solo de referencia visual para el slider; los inputs numéricos
+// aceptan cualquier valor y son los que realmente viajan en la query.
+const SLIDER_MAX = 5000
+
+const sliderMin = computed({
+  get: () => Number(props.filters.minPrice) || 0,
+  set: (val: number) => { props.filters.minPrice = val > 0 ? String(val) : '' },
+})
+const sliderMax = computed({
+  get: () => props.filters.maxPrice ? Number(props.filters.maxPrice) : SLIDER_MAX,
+  set: (val: number) => { props.filters.maxPrice = val < SLIDER_MAX ? String(val) : '' },
+})
+
+const activeFilterCount = computed(() => {
+  return [props.filters.type, props.filters.brand, props.filters.minPrice, props.filters.maxPrice]
+    .filter(Boolean).length
+})
 </script>
 
 <template>
   <aside class="filters">
     <div class="filters__header">
       <h2>Filtros</h2>
-      <button type="button" class="btn btn-ghost" @click="emit('reset')">Limpiar</button>
+      <button
+        v-if="activeFilterCount > 0"
+        type="button"
+        class="btn btn-ghost"
+        @click="emit('reset')"
+      >
+        Limpiar ({{ activeFilterCount }})
+      </button>
     </div>
 
     <div class="filters__group">
@@ -37,11 +62,36 @@ const typeOptions = [
 
     <div class="filters__group">
       <label class="filters__label" for="brand">Marca</label>
-      <input id="brand" v-model="filters.brand" type="text" placeholder="Ej. Seagate">
+      <input id="brand" v-model="filters.brand" type="text" placeholder="Buscar marca...">
     </div>
 
     <div class="filters__group">
       <span class="filters__label">Precio (S/)</span>
+      <div class="filters__price-slider">
+        <div class="filters__price-track">
+          <div
+            class="filters__price-fill"
+            :style="{
+              left: `${(sliderMin / SLIDER_MAX) * 100}%`,
+              right: `${100 - (sliderMax / SLIDER_MAX) * 100}%`,
+            }"
+          />
+        </div>
+        <input
+          v-model.number="sliderMin"
+          type="range"
+          min="0"
+          :max="SLIDER_MAX"
+          step="10"
+        >
+        <input
+          v-model.number="sliderMax"
+          type="range"
+          min="0"
+          :max="SLIDER_MAX"
+          step="10"
+        >
+      </div>
       <div class="filters__price-range">
         <input v-model="filters.minPrice" type="number" min="0" placeholder="Mín">
         <span class="filters__price-dash">–</span>
@@ -131,5 +181,62 @@ const typeOptions = [
 }
 .filters__price-dash {
   color: var(--color-ink-faint);
+}
+
+.filters__price-slider {
+  position: relative;
+  height: 28px;
+  margin-top: 0.2rem;
+}
+.filters__price-track {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 3px;
+  transform: translateY(-50%);
+  background: var(--color-border-strong);
+  border-radius: 999px;
+}
+.filters__price-fill {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: var(--color-accent);
+  border-radius: 999px;
+}
+.filters__price-slider input[type='range'] {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 28px;
+  margin: 0;
+  background: transparent;
+  appearance: none;
+  pointer-events: none;
+}
+.filters__price-slider input[type='range']::-webkit-slider-thumb {
+  appearance: none;
+  pointer-events: auto;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  border: 2px solid var(--color-accent);
+  cursor: pointer;
+  margin-top: 6px;
+}
+.filters__price-slider input[type='range']::-moz-range-thumb {
+  pointer-events: auto;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  border: 2px solid var(--color-accent);
+  cursor: pointer;
+}
+.filters__price-slider input[type='range']::-webkit-slider-runnable-track {
+  background: transparent;
 }
 </style>

@@ -7,6 +7,27 @@ const { data: products, pending, error } = await useFetch<Product[]>('/api/produ
   query: filters,
 })
 
+// Orden y vista son puramente de presentación sobre los datos ya cargados:
+// no disparan nuevas consultas al backend.
+type SortOption = 'relevance' | 'price_asc' | 'price_desc' | 'name_asc'
+const sortBy = ref<SortOption>('relevance')
+const viewMode = ref<'grid' | 'list'>('grid')
+
+const sortedProducts = computed(() => {
+  const list = products.value ?? []
+  const sorted = [...list]
+  switch (sortBy.value) {
+    case 'price_asc':
+      return sorted.sort((a, b) => Number(a.price) - Number(b.price))
+    case 'price_desc':
+      return sorted.sort((a, b) => Number(b.price) - Number(a.price))
+    case 'name_asc':
+      return sorted.sort((a, b) => a.name.localeCompare(b.name))
+    default:
+      return sorted
+  }
+})
+
 function handleAddToCart(product: Product) {
   // TODO(Parte 4 - Carrito): reemplazar por llamada a POST /api/cart/items
   console.log('Agregar al carrito:', product.id)
@@ -14,73 +35,225 @@ function handleAddToCart(product: Product) {
 </script>
 
 <template>
-  <div class="catalog">
-    <ProductFilters :filters="filters" @reset="resetFilters" />
-
-    <section class="catalog__results">
-      <header class="catalog__header">
-        <p class="catalog__eyebrow">Catálogo</p>
-        <h1>Todo lo que necesitas, en un solo carrito</h1>
-      </header>
-
-      <div v-if="pending" class="catalog__grid">
-        <div v-for="n in 6" :key="n" class="skeleton-card">
-          <div class="skeleton-card__image" />
-          <div class="skeleton-card__line" style="width: 40%" />
-          <div class="skeleton-card__line" style="width: 80%" />
-          <div class="skeleton-card__line" style="width: 55%" />
-        </div>
-      </div>
-
-      <div v-else-if="error" class="catalog__state">
-        <p>No pudimos cargar el catálogo. Intenta recargar la página.</p>
-      </div>
-
-      <div v-else-if="products?.length === 0" class="catalog__state">
-        <p class="catalog__state-title">Sin resultados para estos filtros</p>
-        <p class="catalog__state-body">Prueba ajustando el tipo, la marca o el rango de precio.</p>
-        <button type="button" class="btn btn-outline" @click="resetFilters">Limpiar filtros</button>
-      </div>
-
-      <div v-else class="catalog__grid">
-        <ProductCard
-          v-for="product in products"
-          :key="product.id"
-          :product="product"
-          @add-to-cart="handleAddToCart"
-        />
-      </div>
+  <div class="catalog-page">
+    <section class="catalog-hero">
+      <p class="catalog-hero__eyebrow">Carrasco Store</p>
+      <h1>Productos, licencias y servicios en un solo carrito</h1>
+      <p class="catalog-hero__subtitle">Físico, digital y técnico — sin cambiar de tienda.</p>
     </section>
+
+    <nav class="breadcrumb" aria-label="Ruta de navegación">
+      <NuxtLink to="/">Inicio</NuxtLink>
+      <span class="breadcrumb__sep">/</span>
+      <span class="breadcrumb__current">Catálogo</span>
+    </nav>
+
+    <div class="catalog">
+      <ProductFilters :filters="filters" @reset="resetFilters" />
+
+      <section class="catalog__results">
+        <header class="catalog__toolbar">
+          <p class="catalog__count">
+            <template v-if="!pending && !error">
+              {{ sortedProducts.length }} resultado{{ sortedProducts.length === 1 ? '' : 's' }}
+            </template>
+          </p>
+
+          <div class="catalog__toolbar-actions">
+            <div class="catalog__view-toggle" role="group" aria-label="Tipo de vista">
+              <button
+                type="button"
+                class="catalog__view-btn"
+                :class="{ 'is-active': viewMode === 'grid' }"
+                aria-label="Vista de cuadrícula"
+                @click="viewMode = 'grid'"
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <rect x="1" y="1" width="6" height="6" rx="1" fill="currentColor" />
+                  <rect x="9" y="1" width="6" height="6" rx="1" fill="currentColor" />
+                  <rect x="1" y="9" width="6" height="6" rx="1" fill="currentColor" />
+                  <rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                class="catalog__view-btn"
+                :class="{ 'is-active': viewMode === 'list' }"
+                aria-label="Vista de lista"
+                @click="viewMode = 'list'"
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <rect x="1" y="2" width="14" height="3" rx="1" fill="currentColor" />
+                  <rect x="1" y="7" width="14" height="3" rx="1" fill="currentColor" />
+                  <rect x="1" y="12" width="14" height="3" rx="1" fill="currentColor" />
+                </svg>
+              </button>
+            </div>
+
+            <label class="catalog__sort">
+              <span>Ordenar por</span>
+              <select v-model="sortBy">
+                <option value="relevance">Relevancia</option>
+                <option value="price_asc">Precio: menor a mayor</option>
+                <option value="price_desc">Precio: mayor a menor</option>
+                <option value="name_asc">Nombre A-Z</option>
+              </select>
+            </label>
+          </div>
+        </header>
+
+        <div v-if="pending" class="catalog__grid">
+          <div v-for="n in 6" :key="n" class="skeleton-card">
+            <div class="skeleton-card__image" />
+            <div class="skeleton-card__line" style="width: 40%" />
+            <div class="skeleton-card__line" style="width: 80%" />
+            <div class="skeleton-card__line" style="width: 55%" />
+          </div>
+        </div>
+
+        <div v-else-if="error" class="catalog__state">
+          <p>No pudimos cargar el catálogo. Intenta recargar la página.</p>
+        </div>
+
+        <div v-else-if="sortedProducts.length === 0" class="catalog__state">
+          <p class="catalog__state-title">Sin resultados para estos filtros</p>
+          <p class="catalog__state-body">Prueba ajustando el tipo, la marca o el rango de precio.</p>
+          <button type="button" class="btn btn-outline" @click="resetFilters">Limpiar filtros</button>
+        </div>
+
+        <div v-else class="catalog__grid" :class="`catalog__grid--${viewMode}`">
+          <ProductCard
+            v-for="product in sortedProducts"
+            :key="product.id"
+            :product="product"
+            :view="viewMode"
+            @add-to-cart="handleAddToCart"
+          />
+        </div>
+      </section>
+    </div>
   </div>
 </template>
 
 <style scoped>
+.catalog-hero {
+  background: linear-gradient(135deg, var(--color-ink) 0%, #2d3238 100%);
+  color: #fff;
+  padding: 2.75rem 1.5rem;
+  text-align: center;
+}
+.catalog-hero__eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: #b9c2ff;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 0.5rem;
+}
+.catalog-hero h1 {
+  font-size: 1.9rem;
+  max-width: 640px;
+  margin: 0 auto;
+}
+.catalog-hero__subtitle {
+  color: rgba(255, 255, 255, 0.72);
+  margin: 0.6rem 0 0;
+}
+
+.breadcrumb {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem 0;
+  font-size: 0.85rem;
+  color: var(--color-ink-muted);
+}
+.breadcrumb a {
+  text-decoration: none;
+  color: var(--color-ink-muted);
+}
+.breadcrumb a:hover {
+  color: var(--color-accent);
+}
+.breadcrumb__sep {
+  margin: 0 0.45rem;
+  color: var(--color-ink-faint);
+}
+.breadcrumb__current {
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
 .catalog {
   display: grid;
   grid-template-columns: 260px 1fr;
   gap: 1.75rem;
   max-width: 1180px;
   margin: 0 auto;
-  padding: 1.75rem 1.5rem 3rem;
+  padding: 1.25rem 1.5rem 3rem;
 }
-.catalog__header {
+.catalog__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
   margin-bottom: 1.25rem;
+  flex-wrap: wrap;
 }
-.catalog__eyebrow {
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
+.catalog__count {
+  font-size: 0.88rem;
+  color: var(--color-ink-muted);
+  margin: 0;
+}
+.catalog__toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-left: auto;
+}
+.catalog__view-toggle {
+  display: flex;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-control);
+  overflow: hidden;
+}
+.catalog__view-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: var(--color-surface);
+  color: var(--color-ink-faint);
+  cursor: pointer;
+}
+.catalog__view-btn.is-active {
+  background: var(--color-accent-tint);
   color: var(--color-accent);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin: 0 0 0.3rem;
 }
-.catalog__header h1 {
-  font-size: 1.6rem;
+.catalog__sort {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--color-ink-muted);
+}
+.catalog__sort select {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-ink);
 }
 .catalog__grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   gap: 1.1rem;
+}
+.catalog__grid--list {
+  grid-template-columns: 1fr;
 }
 .catalog__state {
   text-align: center;
