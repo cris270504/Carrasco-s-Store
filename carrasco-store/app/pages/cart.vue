@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const { items, removeItem, setQuantity, subtotal } = useCart()
+const user = useSupabaseUser()
 
 const typeLabels: Record<string, string> = {
   physical: 'Físico',
@@ -7,9 +8,35 @@ const typeLabels: Record<string, string> = {
   service: 'Servicio',
 }
 
-function handleCheckout() {
-  // TODO(Parte 4 - Checkout/Pagos): reemplazar por creacion de orden + Mercado Pago
-  console.log('Ir a checkout con', items.value.length, 'items')
+const hasPhysicalItem = computed(() => items.value.some(i => i.itemType === 'physical'))
+const shipping = computed(() => calcShipping(hasPhysicalItem.value))
+const tax = computed(() => calcTax(subtotal.value))
+const total = computed(() => subtotal.value + shipping.value + tax.value)
+
+const checkingOut = ref(false)
+const checkoutError = ref('')
+
+async function handleCheckout() {
+  if (!user.value) {
+    await navigateTo({ path: '/login', query: { redirect: '/cart' } })
+    return
+  }
+
+  checkoutError.value = ''
+  checkingOut.value = true
+  try {
+    const { initPoint } = await $fetch<{ orderId: string, initPoint: string }>('/api/checkout', {
+      method: 'POST',
+    })
+    await navigateTo(initPoint, { external: true })
+  }
+  catch (err) {
+    checkoutError.value = (err as { data?: { statusMessage?: string } })?.data?.statusMessage
+      || 'No se pudo iniciar el pago. Intenta nuevamente.'
+  }
+  finally {
+    checkingOut.value = false
+  }
 }
 </script>
 
@@ -86,20 +113,27 @@ function handleCheckout() {
         </div>
         <div class="cart-summary__row cart-summary__row--muted">
           <span>Envío</span>
-          <span>Se calcula en el pago</span>
+          <span>{{ shipping > 0 ? `S/ ${shipping.toFixed(2)}` : 'Gratis' }}</span>
         </div>
         <div class="cart-summary__row cart-summary__row--muted">
-          <span>Impuestos</span>
-          <span>Se calculan en el pago</span>
+          <span>IGV (18%)</span>
+          <span>S/ {{ tax.toFixed(2) }}</span>
         </div>
         <div class="ticket-divider" />
         <div class="cart-summary__row cart-summary__row--total">
-          <span>Total estimado</span>
-          <span>S/ {{ subtotal.toFixed(2) }}</span>
+          <span>Total</span>
+          <span>S/ {{ total.toFixed(2) }}</span>
         </div>
 
-        <button type="button" class="btn btn-primary cart-summary__submit" @click="handleCheckout">
-          Continuar al pago
+        <p v-if="checkoutError" class="cart-summary__error" role="alert">{{ checkoutError }}</p>
+
+        <button
+          type="button"
+          class="btn btn-primary cart-summary__submit"
+          :disabled="checkingOut"
+          @click="handleCheckout"
+        >
+          {{ checkingOut ? 'Redirigiendo…' : 'Continuar al pago' }}
         </button>
         <p class="cart-summary__trust">🔒 Pago seguro procesado con Mercado Pago</p>
         <NuxtLink to="/catalogo" class="cart-summary__continue">Seguir comprando</NuxtLink>
@@ -305,6 +339,11 @@ function handleCheckout() {
   font-weight: 700;
   font-size: 1.05rem;
   font-family: var(--font-mono);
+}
+.cart-summary__error {
+  color: var(--color-danger);
+  font-size: 0.8rem;
+  margin: 0.6rem 0 0;
 }
 .cart-summary__submit {
   width: 100%;
