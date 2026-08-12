@@ -6,15 +6,17 @@ function storageKey(userId: string) {
   return `welcome-seen:${userId}`
 }
 
-watch(user, (current) => {
-  if (!current) return
+if (import.meta.client) {
+  watch(user, (current) => {
+    if (!current) return
 
-  const key = storageKey(current.id)
-  if (localStorage.getItem(key)) return
+    const key = storageKey(current.id)
+    if (localStorage.getItem(key)) return
 
-  localStorage.setItem(key, '1')
-  visible.value = true
-}, { immediate: true })
+    localStorage.setItem(key, '1')
+    visible.value = true
+  }, { immediate: true })
+}
 
 function close() {
   visible.value = false
