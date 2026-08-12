@@ -29,6 +29,10 @@ const year = new Date().getFullYear()
 
     <div class="app-footer__bottom">
       <span>© {{ year }} Carrasco Store</span>
+      <nav class="app-footer__legal" aria-label="Legal">
+        <NuxtLink to="/terminos">Términos y condiciones</NuxtLink>
+        <NuxtLink to="/privacidad">Política de privacidad</NuxtLink>
+      </nav>
       <span>Pagos procesados con Mercado Pago</span>
     </div>
   </footer>
@@ -93,6 +97,17 @@ const year = new Date().getFullYear()
   gap: 0.5rem;
   font-size: 0.78rem;
   color: rgba(255, 255, 255, 0.45);
+}
+.app-footer__legal {
+  display: flex;
+  gap: 1.1rem;
+}
+.app-footer__legal a {
+  color: rgba(255, 255, 255, 0.45);
+  text-decoration: none;
+}
+.app-footer__legal a:hover {
+  color: rgba(255, 255, 255, 0.78);
 }
 
 @media (max-width: 640px) {

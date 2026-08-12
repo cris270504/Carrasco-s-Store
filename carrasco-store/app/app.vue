@@ -5,6 +5,10 @@ onMounted(() => {
   fetchCart()
   fetchFavorites()
 })
+
+useHead({
+  titleTemplate: (title) => title ? `${title} · Carrasco Store` : 'Carrasco Store',
+})
 </script>
 
 <template>

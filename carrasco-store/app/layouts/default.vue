@@ -1,3 +1,12 @@
+<script setup lang="ts">
+useSeoMeta({
+  ogTitle: 'Carrasco Store',
+  ogDescription: 'Productos físicos, licencias digitales y servicios técnicos en un solo carrito, con pago seguro vía Mercado Pago.',
+  ogType: 'website',
+  twitterCard: 'summary_large_image',
+})
+</script>
+
 <template>
   <div class="app-shell">
     <AppHeader />
