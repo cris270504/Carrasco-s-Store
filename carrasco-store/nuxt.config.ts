@@ -2,7 +2,7 @@
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
-  modules: ['@nuxtjs/supabase', '@nuxt/image'],
+  modules: ['@nuxtjs/supabase', '@nuxt/image', '@nuxtjs/sitemap', '@nuxtjs/robots'],
   css: ['~/assets/css/main.css'],
   app: {
     head: {
@@ -28,6 +28,13 @@ export default defineNuxtConfig({
   image: {
     format: ['webp'],
   },
+  site: {
+    // TODO: reemplazar por el dominio real de produccion (o definir NUXT_PUBLIC_SITE_URL)
+    url: process.env.NUXT_PUBLIC_SITE_URL || 'https://carrasco-store.example.com',
+  },
+  sitemap: {
+    exclude: ['/admin/**', '/cart', '/checkout/**', '/dashboard', '/favoritos', '/login', '/register'],
+  },
   runtimeConfig: {
     public: {
       adminEmails: process.env.ADMIN_EMAILS || '',
@@ -42,6 +49,11 @@ export default defineNuxtConfig({
           'Referrer-Policy': 'strict-origin-when-cross-origin',
         },
       },
+      '/admin/**': { robots: false },
+      '/cart': { robots: false },
+      '/checkout/**': { robots: false },
+      '/dashboard': { robots: false },
+      '/favoritos': { robots: false },
     },
   },
 })

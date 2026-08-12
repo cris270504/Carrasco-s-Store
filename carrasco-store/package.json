@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@nuxt/image": "2.1.0",
+    "@nuxtjs/robots": "6.1.4",
+    "@nuxtjs/sitemap": "8.3.4",
     "@nuxtjs/supabase": "^2.0.10",
     "drizzle-orm": "^0.45.2",
     "nuxt": "^4.5.2",
