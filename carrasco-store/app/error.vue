@@ -24,10 +24,10 @@ function handleBackHome() {
       <h1 v-else>Algo salió mal</h1>
       <p class="error-page__message">
         <template v-if="isNotFound">
-          El enlace que seguiste puede estar roto o la página fue movida. Revisá la dirección o volvé al inicio.
+          El enlace que seguiste puede estar roto o la página fue movida. Revisa la dirección o vuelve al inicio.
         </template>
         <template v-else>
-          Ocurrió un error inesperado al procesar tu solicitud. Podés volver al inicio e intentarlo nuevamente.
+          Ocurrió un error inesperado al procesar tu solicitud. Puedes volver al inicio e intentarlo nuevamente.
         </template>
       </p>
       <button class="btn btn-primary error-page__btn" @click="handleBackHome">

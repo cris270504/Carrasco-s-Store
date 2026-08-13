@@ -6,12 +6,12 @@ useSeoMeta({
   ogDescription: 'Términos y condiciones de uso y compra en Carrasco Store.',
 })
 
-const lastUpdated = new Date().toLocaleDateString('es-AR', { year: 'numeric', month: 'long', day: 'numeric' })
+const lastUpdated = new Date().toLocaleDateString('es-PE', { year: 'numeric', month: 'long', day: 'numeric' })
 
 const sections = [
   {
     title: '1. Aceptación de los términos',
-    body: 'Al acceder y utilizar Carrasco Store aceptás quedar vinculado por estos Términos y Condiciones, así como por nuestra Política de Privacidad. Si no estás de acuerdo con alguna de estas condiciones, no debés utilizar el sitio ni realizar compras a través de él.',
+    body: 'Al acceder y utilizar Carrasco Store aceptas quedar vinculado por estos Términos y Condiciones, así como por nuestra Política de Privacidad. Si no estás de acuerdo con alguna de estas condiciones, no debes utilizar el sitio ni realizar compras a través de él.',
   },
   {
     title: '2. Productos y servicios ofrecidos',
@@ -19,7 +19,7 @@ const sections = [
   },
   {
     title: '3. Cuentas de usuario',
-    body: 'Para realizar compras es necesario crear una cuenta con un correo electrónico válido. Sos responsable de mantener la confidencialidad de tus credenciales y de toda actividad realizada desde tu cuenta. Notificanos de inmediato ante cualquier uso no autorizado.',
+    body: 'Para realizar compras es necesario crear una cuenta con un correo electrónico válido. Eres responsable de mantener la confidencialidad de tus credenciales y de toda actividad realizada desde tu cuenta. Notifícanos de inmediato ante cualquier uso no autorizado.',
   },
   {
     title: '4. Precios y pagos',
@@ -31,11 +31,11 @@ const sections = [
   },
   {
     title: '6. Cancelaciones y reembolsos',
-    body: 'Las condiciones de cancelación y reembolso varían según el tipo de ítem adquirido. Para productos físicos con defectos de fábrica, licencias digitales no entregadas o servicios no prestados, contactanos a través de los canales de soporte para iniciar el proceso correspondiente.',
+    body: 'Las condiciones de cancelación y reembolso varían según el tipo de ítem adquirido. Para productos físicos con defectos de fábrica, licencias digitales no entregadas o servicios no prestados, contáctanos a través de los canales de soporte para iniciar el proceso correspondiente.',
   },
   {
     title: '7. Uso aceptable',
-    body: 'Te comprometés a utilizar el sitio de forma lícita, sin vulnerar sistemas, intentar accesos no autorizados, ni utilizar la plataforma con fines fraudulentos. Nos reservamos el derecho de suspender cuentas que incumplan estas condiciones.',
+    body: 'Te comprometes a utilizar el sitio de forma lícita, sin vulnerar sistemas, intentar accesos no autorizados, ni utilizar la plataforma con fines fraudulentos. Nos reservamos el derecho de suspender cuentas que incumplan estas condiciones.',
   },
   {
     title: '8. Propiedad intelectual',
@@ -51,7 +51,7 @@ const sections = [
   },
   {
     title: '11. Contacto',
-    body: 'Ante cualquier consulta sobre estos términos, podés contactarnos a través de los medios de soporte disponibles en el sitio.',
+    body: 'Ante cualquier consulta sobre estos términos, puedes contactarnos a través de los medios de soporte disponibles en el sitio.',
   },
 ]
 </script>

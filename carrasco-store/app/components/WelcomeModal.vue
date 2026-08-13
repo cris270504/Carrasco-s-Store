@@ -31,7 +31,7 @@ function close() {
           <span class="welcome-dialog__icon" aria-hidden="true">👋</span>
           <h3 id="welcome-title">¡Bienvenido a Carrasco Store!</h3>
           <p>
-            Tu cuenta ya está lista. Explorá el catálogo de productos físicos, licencias digitales
+            Tu cuenta ya está lista. Explora el catálogo de productos físicos, licencias digitales
             y servicios técnicos, todo desde un solo carrito.
           </p>
           <button type="button" class="btn btn-primary welcome-dialog__close" @click="close">

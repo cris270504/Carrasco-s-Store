@@ -6,12 +6,12 @@ useSeoMeta({
   ogDescription: 'Política de privacidad y tratamiento de datos personales de Carrasco Store.',
 })
 
-const lastUpdated = new Date().toLocaleDateString('es-AR', { year: 'numeric', month: 'long', day: 'numeric' })
+const lastUpdated = new Date().toLocaleDateString('es-PE', { year: 'numeric', month: 'long', day: 'numeric' })
 
 const sections = [
   {
     title: '1. Datos que recopilamos',
-    body: 'Recopilamos los datos que nos proporcionás al crear una cuenta (nombre, correo electrónico), al completar un pedido (dirección de envío, preferencias de agendamiento) y los datos técnicos generados por el uso del sitio (dirección IP, tipo de dispositivo, páginas visitadas).',
+    body: 'Recopilamos los datos que nos proporcionas al crear una cuenta (nombre, correo electrónico), al completar un pedido (dirección de envío, preferencias de agendamiento) y los datos técnicos generados por el uso del sitio (dirección IP, tipo de dispositivo, páginas visitadas).',
   },
   {
     title: '2. Finalidad del tratamiento',
@@ -39,7 +39,7 @@ const sections = [
   },
   {
     title: '8. Tus derechos',
-    body: 'Podés acceder, corregir o solicitar la eliminación de tus datos personales, así como revocar el consentimiento otorgado, contactándonos a través de los canales de soporte disponibles en el sitio.',
+    body: 'Puedes acceder, corregir o solicitar la eliminación de tus datos personales, así como revocar el consentimiento otorgado, contactándonos a través de los canales de soporte disponibles en el sitio.',
   },
   {
     title: '9. Menores de edad',
@@ -51,7 +51,7 @@ const sections = [
   },
   {
     title: '11. Contacto',
-    body: 'Para consultas sobre el tratamiento de tus datos personales, podés contactarnos a través de los medios de soporte disponibles en el sitio.',
+    body: 'Para consultas sobre el tratamiento de tus datos personales, puedes contactarnos a través de los medios de soporte disponibles en el sitio.',
   },
 ]
 </script>
