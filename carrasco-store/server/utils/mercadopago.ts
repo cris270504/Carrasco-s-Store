@@ -14,12 +14,25 @@ function getAccessToken() {
 export interface MpPreferenceItem {
   id: string
   title: string
+  description?: string
   quantity: number
   unit_price: number
 }
 
+export interface MpPreferencePayer {
+  email: string
+  name?: string
+  surname?: string
+}
+
+// Nombre del comercio en el resumen de tarjeta del comprador (reduce
+// contracargos por "no reconozco este cargo"). Limite conservador de MP: 13
+// caracteres, sin espacios/acentos.
+const STATEMENT_DESCRIPTOR = 'CARRASCOSTORE'
+
 export async function createMpPreference(params: {
   items: MpPreferenceItem[]
+  payer: MpPreferencePayer
   externalReference: string
   successUrl: string
   failureUrl: string
@@ -33,6 +46,11 @@ export async function createMpPreference(params: {
     headers: { Authorization: `Bearer ${token}` },
     body: {
       items: params.items.map(item => ({ ...item, currency_id: 'PEN' })),
+      // El motor antifraude de Mercado Pago usa los datos del pagador para
+      // calificar el riesgo de la transaccion; sin esto la tasa de rechazo
+      // de pagos legitimos sube.
+      payer: params.payer,
+      statement_descriptor: STATEMENT_DESCRIPTOR,
       external_reference: params.externalReference,
       back_urls: {
         success: params.successUrl,

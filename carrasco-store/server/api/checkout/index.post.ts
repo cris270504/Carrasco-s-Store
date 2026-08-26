@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
     if (!found) {
       throw createError({ statusCode: 400, statusMessage: `"${item.name}" ya no está disponible` })
     }
-    return { ...item, unitPrice: found.unitPrice }
+    return { ...item, unitPrice: found.unitPrice, description: found.product.description }
   }))
 
   for (const item of pricedItems) {
@@ -75,14 +75,25 @@ export default defineEventHandler(async (event) => {
 
   const origin = getRequestURL(event).origin
 
+  // El motor antifraude de Mercado Pago usa nombre/apellido del pagador para
+  // calificar el riesgo de la transaccion; sin esto sube la tasa de rechazo.
+  const fullName = (user.user_metadata as { full_name?: string } | undefined)?.full_name?.trim()
+  const [payerName, ...payerSurnameParts] = fullName ? fullName.split(/\s+/) : []
+
   try {
     const preference = await createMpPreference({
       items: pricedItems.map(item => ({
         id: item.productId,
         title: item.name,
+        description: item.description ?? undefined,
         quantity: item.quantity,
         unit_price: item.unitPrice,
       })),
+      payer: {
+        email: user.email!,
+        name: payerName,
+        surname: payerSurnameParts.length > 0 ? payerSurnameParts.join(' ') : undefined,
+      },
       externalReference: order!.id,
       successUrl: `${origin}/checkout/success`,
       failureUrl: `${origin}/checkout/failure`,
