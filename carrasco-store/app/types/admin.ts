@@ -10,6 +10,7 @@ export interface AdminProductListItem {
   isActive: boolean | null
   image: string | null
   detail: string
+  hasSales: boolean
 }
 
 export interface AdminProductVariant {

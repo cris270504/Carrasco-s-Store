@@ -1,5 +1,5 @@
-import { and, eq, ilike } from 'drizzle-orm'
-import { products } from '../../../database/schema'
+import { and, eq, ilike, inArray } from 'drizzle-orm'
+import { orderItems, products } from '../../../database/schema'
 
 interface AdminProductRow {
   type: 'service' | 'physical' | 'digital'
@@ -31,6 +31,14 @@ export default defineEventHandler(async (event) => {
     orderBy: (table, { desc }) => [desc(table.createdAt)],
   })
 
+  // Determina de una sola vez que productos tienen ventas (order_items), para
+  // que la UI pueda anticipar si "eliminar" va a desactivar o borrar de verdad.
+  const productIds = rows.map(p => p.id)
+  const soldRows = productIds.length > 0
+    ? await db.selectDistinct({ productId: orderItems.productId }).from(orderItems).where(inArray(orderItems.productId, productIds))
+    : []
+  const soldIds = new Set(soldRows.map(r => r.productId))
+
   return rows.map(product => ({
     id: product.id,
     name: product.name,
@@ -41,6 +49,7 @@ export default defineEventHandler(async (event) => {
     isActive: product.isActive,
     image: product.images[0] ?? null,
     detail: buildDetail(product),
+    hasSales: soldIds.has(product.id),
   }))
 })
 

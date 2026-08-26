@@ -22,22 +22,34 @@ const filtered = computed(() => (products.value ?? []).filter((p) => {
 }))
 
 async function handleDelete(product: AdminProductListItem) {
-  const confirmed = await confirmDialog({
-    title: 'Desactivar producto',
-    message: `"${product.name}" dejará de mostrarse en el catálogo. Podrás reactivarlo después desde su edición.`,
-    confirmLabel: 'Desactivar',
-    variant: 'danger',
-  })
+  const confirmed = await confirmDialog(product.hasSales
+    ? {
+        title: 'Desactivar producto',
+        message: `"${product.name}" tiene ventas registradas, así que se desactivará en vez de eliminarse: dejará de mostrarse en el catálogo pero se conserva su historial de órdenes. Podrás reactivarlo después desde su edición.`,
+        confirmLabel: 'Desactivar',
+        variant: 'danger',
+      }
+    : {
+        title: 'Eliminar producto',
+        message: `"${product.name}" no tiene ventas registradas, así que se eliminará de forma permanente junto con sus variantes e imágenes. Esta acción no se puede deshacer.`,
+        confirmLabel: 'Eliminar',
+        variant: 'danger',
+      })
   if (!confirmed) return
 
   deletingId.value = product.id
   try {
-    await $fetch(`/api/admin/products/${product.id}`, { method: 'DELETE' })
+    const result = await $fetch<{ success: true, mode: 'disabled' | 'deleted' }>(
+      `/api/admin/products/${product.id}`,
+      { method: 'DELETE' },
+    )
     await refresh()
-    toast.success(`"${product.name}" fue desactivado.`)
+    toast.success(result.mode === 'deleted'
+      ? `"${product.name}" fue eliminado permanentemente.`
+      : `"${product.name}" fue desactivado.`)
   }
   catch {
-    toast.error('No se pudo desactivar el producto. Intenta de nuevo.')
+    toast.error('No se pudo completar la acción. Intenta de nuevo.')
   }
   finally {
     deletingId.value = null
@@ -99,6 +111,7 @@ async function handleDelete(product: AdminProductListItem) {
             <td>
               <span class="status-dot" :class="{ 'is-active': product.isActive }" />
               {{ product.isActive ? 'Activo' : 'Inactivo' }}
+              <span v-if="product.hasSales" class="sales-badge" title="Tiene ventas registradas">Con ventas</span>
             </td>
             <td class="products-page__actions">
               <NuxtLink :to="`/admin/productos/${product.id}/editar`" class="icon-btn" aria-label="Editar">
@@ -109,11 +122,17 @@ async function handleDelete(product: AdminProductListItem) {
               <button
                 type="button"
                 class="icon-btn is-danger"
-                aria-label="Eliminar"
+                :aria-label="product.hasSales ? 'Desactivar' : 'Eliminar'"
+                :title="product.hasSales ? 'Desactivar (tiene ventas registradas)' : 'Eliminar permanentemente'"
                 :disabled="deletingId === product.id"
                 @click="handleDelete(product)"
               >
-                <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
+                <svg v-if="product.hasSales" width="15" height="15" viewBox="0 0 20 20" fill="none">
+                  <path d="M2 10C3.5 6.5 6.5 4.5 10 4.5s6.5 2 8 5.5c-1.5 3.5-4.5 5.5-8 5.5s-6.5-2-8-5.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" />
+                  <circle cx="10" cy="10" r="2.2" stroke="currentColor" stroke-width="1.4" />
+                  <path d="M3.5 3.5l13 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+                </svg>
+                <svg v-else width="15" height="15" viewBox="0 0 20 20" fill="none">
                   <path d="M4 6h12M8 6V4h4v2M6 6l.6 10h6.8L14 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
               </button>
@@ -274,6 +293,18 @@ async function handleDelete(product: AdminProductListItem) {
 }
 .status-dot.is-active {
   background: var(--color-success);
+}
+
+.sales-badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: var(--color-accent-tint);
+  color: var(--color-accent);
+  white-space: nowrap;
 }
 
 .icon-btn {
