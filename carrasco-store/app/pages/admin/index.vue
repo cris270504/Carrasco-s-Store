@@ -1,36 +1,34 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 
-// TODO: reemplazar por GET /api/admin/metrics cuando exista el endpoint.
-const metrics = [
-  { label: 'Ventas del mes', value: 'S/ 12,480.00', change: '+18%', trend: 'up', icon: 'sales' },
-  { label: 'Pedidos pendientes', value: '7', change: '2 nuevos hoy', trend: 'neutral', icon: 'orders' },
-  { label: 'Productos activos', value: '48', change: '3 sin stock', trend: 'down', icon: 'box' },
-  { label: 'Clientes nuevos', value: '15', change: '+6 esta semana', trend: 'up', icon: 'users' },
-] as const
+interface AdminMetrics {
+  salesThisMonth: number
+  salesChangePct: number | null
+  pendingOrders: number
+  pendingOrdersToday: number
+  activeProducts: number
+  outOfStockCount: number
+  newCustomers: number
+  newCustomersThisWeek: number
+  weeklySales: number[]
+  lowStock: { name: string, stock: number }[]
+  recentOrders: { id: string, customer: string, total: number, status: string }[]
+}
 
-const recentOrders = [
-  { id: '195EB1A3', customer: 'Cristopher Carrasco', total: 605.00, status: 'pending_payment' },
-  { id: 'FD6474AB', customer: 'Ana Torres', total: 310.00, status: 'paid' },
-  { id: '9C21F0E4', customer: 'Luis Ramírez', total: 89.90, status: 'shipped' },
-  { id: '7B8A6D12', customer: 'María Quispe', total: 1250.00, status: 'completed' },
-] as const
+const { data: metrics, pending } = await useFetch<AdminMetrics>('/api/admin/metrics')
 
 const statusLabels: Record<string, string> = {
   pending_payment: 'Pendiente de pago',
   paid: 'Pagado',
+  processing: 'En proceso',
   shipped: 'Enviado',
   completed: 'Completado',
+  cancelled: 'Cancelado',
+  refunded: 'Reembolsado',
 }
 
-const lowStock = [
-  { name: 'Disco Duro Sólido 1TB', stock: 2 },
-  { name: 'Licencia Antivirus Pro', stock: 1 },
-  { name: 'Mouse Inalámbrico', stock: 0 },
-] as const
-
-const weeklySales = [40, 55, 35, 70, 62, 80, 58] as const
-const maxSale = Math.max(...weeklySales)
+const weekdayLabels = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
+const maxSale = computed(() => Math.max(1, ...(metrics.value?.weeklySales ?? [])))
 </script>
 
 <template>
@@ -40,86 +38,122 @@ const maxSale = Math.max(...weeklySales)
       <h1>Dashboard</h1>
     </header>
 
-    <section class="metrics-grid">
-      <div v-for="metric in metrics" :key="metric.label" class="metric-card">
-        <div class="metric-card__icon" :class="`is-${metric.icon}`">
-          <svg v-if="metric.icon === 'sales'" width="18" height="18" viewBox="0 0 20 20" fill="none">
-            <path d="M2 15 7 9l4 3 6-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-            <path d="M13 5h5v5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-          <svg v-else-if="metric.icon === 'orders'" width="18" height="18" viewBox="0 0 20 20" fill="none">
-            <path d="M2 2h2l1.2 9.6A1.5 1.5 0 0 0 6.68 13h8.14a1.5 1.5 0 0 0 1.48-1.24L17.5 5H4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-            <circle cx="7.5" cy="17" r="1.3" fill="currentColor" />
-            <circle cx="14.5" cy="17" r="1.3" fill="currentColor" />
-          </svg>
-          <svg v-else-if="metric.icon === 'box'" width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <path d="M3 8l9-4 9 4-9 4-9-4Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
-            <path d="M3 8v8l9 4 9-4V8" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
-          </svg>
-          <svg v-else width="18" height="18" viewBox="0 0 20 20" fill="none">
-            <circle cx="7" cy="6.5" r="2.7" stroke="currentColor" stroke-width="1.5" />
-            <path d="M2 17c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-          </svg>
-        </div>
-        <p class="metric-card__value">{{ metric.value }}</p>
-        <p class="metric-card__label">{{ metric.label }}</p>
-        <span class="metric-card__change" :class="`is-${metric.trend}`">{{ metric.change }}</span>
-      </div>
-    </section>
+    <p v-if="pending" class="dashboard__state">Cargando métricas…</p>
 
-    <section class="dashboard-grid">
-      <div class="panel">
-        <div class="panel__header">
-          <h2>Ventas de la semana</h2>
-          <span class="panel__hint">Simulado</span>
+    <template v-else-if="metrics">
+      <section class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-card__icon is-sales">
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+              <path d="M2 15 7 9l4 3 6-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M13 5h5v5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </div>
+          <p class="metric-card__value">S/ {{ metrics.salesThisMonth.toFixed(2) }}</p>
+          <p class="metric-card__label">Ventas del mes</p>
+          <span
+            class="metric-card__change"
+            :class="metrics.salesChangePct === null ? '' : metrics.salesChangePct >= 0 ? 'is-up' : 'is-down'"
+          >
+            {{ metrics.salesChangePct === null ? 'Sin datos del mes anterior' : `${metrics.salesChangePct >= 0 ? '+' : ''}${metrics.salesChangePct}%` }}
+          </span>
         </div>
-        <div class="bar-chart">
-          <div v-for="(value, i) in weeklySales" :key="i" class="bar-chart__col">
-            <div class="bar-chart__bar" :style="{ height: `${(value / maxSale) * 100}%` }" />
-            <span>{{ ['L', 'M', 'X', 'J', 'V', 'S', 'D'][i] }}</span>
+
+        <div class="metric-card">
+          <div class="metric-card__icon is-orders">
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+              <path d="M2 2h2l1.2 9.6A1.5 1.5 0 0 0 6.68 13h8.14a1.5 1.5 0 0 0 1.48-1.24L17.5 5H4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+              <circle cx="7.5" cy="17" r="1.3" fill="currentColor" />
+              <circle cx="14.5" cy="17" r="1.3" fill="currentColor" />
+            </svg>
+          </div>
+          <p class="metric-card__value">{{ metrics.pendingOrders }}</p>
+          <p class="metric-card__label">Pedidos pendientes</p>
+          <span class="metric-card__change">{{ metrics.pendingOrdersToday }} nuevos hoy</span>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-card__icon is-box">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M3 8l9-4 9 4-9 4-9-4Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+              <path d="M3 8v8l9 4 9-4V8" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+            </svg>
+          </div>
+          <p class="metric-card__value">{{ metrics.activeProducts }}</p>
+          <p class="metric-card__label">Productos activos</p>
+          <span class="metric-card__change" :class="{ 'is-down': metrics.outOfStockCount > 0 }">
+            {{ metrics.outOfStockCount }} sin stock
+          </span>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-card__icon is-users">
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+              <circle cx="7" cy="6.5" r="2.7" stroke="currentColor" stroke-width="1.5" />
+              <path d="M2 17c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+            </svg>
+          </div>
+          <p class="metric-card__value">{{ metrics.newCustomers }}</p>
+          <p class="metric-card__label">Clientes nuevos</p>
+          <span class="metric-card__change is-up">+{{ metrics.newCustomersThisWeek }} esta semana</span>
+        </div>
+      </section>
+
+      <section class="dashboard-grid">
+        <div class="panel">
+          <div class="panel__header">
+            <h2>Ventas de la semana</h2>
+          </div>
+          <div class="bar-chart">
+            <div v-for="(value, i) in metrics.weeklySales" :key="i" class="bar-chart__col">
+              <div class="bar-chart__bar" :style="{ height: `${(value / maxSale) * 100}%` }" />
+              <span>{{ weekdayLabels[i] }}</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="panel">
-        <div class="panel__header">
-          <h2>Stock bajo</h2>
+        <div class="panel">
+          <div class="panel__header">
+            <h2>Stock bajo</h2>
+          </div>
+          <ul v-if="metrics.lowStock.length" class="stock-list">
+            <li v-for="item in metrics.lowStock" :key="item.name">
+              <span>{{ item.name }}</span>
+              <span class="stock-list__badge" :class="{ 'is-empty': item.stock === 0 }">
+                {{ item.stock === 0 ? 'Agotado' : `${item.stock} u.` }}
+              </span>
+            </li>
+          </ul>
+          <p v-else class="dashboard__empty">Ningún producto con stock bajo.</p>
         </div>
-        <ul class="stock-list">
-          <li v-for="item in lowStock" :key="item.name">
-            <span>{{ item.name }}</span>
-            <span class="stock-list__badge" :class="{ 'is-empty': item.stock === 0 }">
-              {{ item.stock === 0 ? 'Agotado' : `${item.stock} u.` }}
-            </span>
-          </li>
-        </ul>
-      </div>
-    </section>
+      </section>
 
-    <section class="panel">
-      <div class="panel__header">
-        <h2>Pedidos recientes</h2>
-        <NuxtLink to="/admin/ordenes" class="panel__link">Ver todos →</NuxtLink>
-      </div>
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Orden</th>
-            <th>Cliente</th>
-            <th>Total</th>
-            <th>Estado</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="order in recentOrders" :key="order.id">
-            <td class="admin-table__mono">#{{ order.id }}</td>
-            <td>{{ order.customer }}</td>
-            <td class="admin-table__mono">S/ {{ order.total.toFixed(2) }}</td>
-            <td><span class="status-badge" :class="`is-${order.status}`">{{ statusLabels[order.status] }}</span></td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
+      <section class="panel">
+        <div class="panel__header">
+          <h2>Pedidos recientes</h2>
+          <NuxtLink to="/admin/ordenes" class="panel__link">Ver todos →</NuxtLink>
+        </div>
+        <table v-if="metrics.recentOrders.length" class="admin-table">
+          <thead>
+            <tr>
+              <th>Orden</th>
+              <th>Cliente</th>
+              <th>Total</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="order in metrics.recentOrders" :key="order.id">
+              <td class="admin-table__mono">#{{ order.id.slice(0, 8).toUpperCase() }}</td>
+              <td>{{ order.customer }}</td>
+              <td class="admin-table__mono">S/ {{ order.total.toFixed(2) }}</td>
+              <td><span class="status-badge" :class="`is-${order.status}`">{{ statusLabels[order.status] ?? order.status }}</span></td>
+            </tr>
+          </tbody>
+        </table>
+        <p v-else class="dashboard__empty">Todavía no hay pedidos.</p>
+      </section>
+    </template>
   </div>
 </template>
 
@@ -137,6 +171,19 @@ const maxSale = Math.max(...weeklySales)
 }
 .page-header h1 {
   font-size: 1.5rem;
+}
+
+.dashboard__state {
+  color: var(--color-ink-muted);
+  padding: 2rem 0;
+  text-align: center;
+}
+.dashboard__empty {
+  color: var(--color-ink-muted);
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 1rem 0;
+  margin: 0;
 }
 
 .metrics-grid {

@@ -11,26 +11,21 @@ interface AdminUser {
   active: boolean
 }
 
-// TODO: reemplazar por datos reales cuando exista GET /api/admin/users.
-const { data: fetchedUsers } = await useFetch<AdminUser[]>('/api/admin/users', {
+const { data: fetchedUsers, pending } = await useFetch<AdminUser[]>('/api/admin/users', {
   default: () => [],
 })
 
-const mockUsers: AdminUser[] = [
-  { id: 'b25ba771', name: 'Cristopher Carrasco', email: 'cristopher270504@gmail.com', registeredAt: '2026-08-05', orders: 3, totalSpent: 915.00, active: true },
-  { id: 'c36cb882', name: 'Ana Torres', email: 'ana.torres@example.com', registeredAt: '2026-07-28', orders: 1, totalSpent: 310.00, active: true },
-  { id: 'd47dc993', name: 'Luis Ramírez', email: 'luis.ramirez@example.com', registeredAt: '2026-07-20', orders: 2, totalSpent: 179.80, active: true },
-  { id: 'e58eda04', name: 'María Quispe', email: 'maria.quispe@example.com', registeredAt: '2026-07-15', orders: 5, totalSpent: 3120.00, active: true },
-  { id: 'f69feb15', name: 'Jorge Salinas', email: 'jorge.salinas@example.com', registeredAt: '2026-06-30', orders: 1, totalSpent: 89.90, active: false },
-]
-
-const users = computed(() => fetchedUsers.value?.length ? fetchedUsers.value : mockUsers)
+const users = computed(() => fetchedUsers.value ?? [])
 
 const search = ref('')
 const filtered = computed(() => users.value.filter(u =>
   u.name.toLowerCase().includes(search.value.toLowerCase())
   || u.email.toLowerCase().includes(search.value.toLowerCase()),
 ))
+
+function formatDate(value: string) {
+  return new Date(value).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
+}
 </script>
 
 <template>
@@ -45,7 +40,8 @@ const filtered = computed(() => users.value.filter(u =>
     </div>
 
     <div class="panel">
-      <table class="admin-table">
+      <p v-if="pending" class="users-page__empty">Cargando usuarios…</p>
+      <table v-else class="admin-table">
         <thead>
           <tr>
             <th>Cliente</th>
@@ -60,19 +56,19 @@ const filtered = computed(() => users.value.filter(u =>
           <tr v-for="user in filtered" :key="user.id">
             <td>
               <div class="users-page__customer">
-                <span class="users-page__avatar">{{ user.name.charAt(0) }}</span>
+                <span class="users-page__avatar">{{ user.name.charAt(0).toUpperCase() }}</span>
                 <div>
                   <p class="users-page__name">{{ user.name }}</p>
                   <p class="users-page__email">{{ user.email }}</p>
                 </div>
               </div>
             </td>
-            <td class="users-page__muted">{{ user.registeredAt }}</td>
+            <td class="users-page__muted">{{ formatDate(user.registeredAt) }}</td>
             <td class="admin-table__mono">{{ user.orders }}</td>
             <td class="admin-table__mono">S/ {{ user.totalSpent.toFixed(2) }}</td>
             <td>
               <span class="status-dot" :class="{ 'is-active': user.active }" />
-              {{ user.active ? 'Activo' : 'Inactivo' }}
+              {{ user.active ? 'Activo' : 'Suspendido' }}
             </td>
             <td>
               <button type="button" class="btn btn-outline users-page__view">Ver detalle</button>

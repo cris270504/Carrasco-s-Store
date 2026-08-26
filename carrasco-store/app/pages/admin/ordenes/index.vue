@@ -1,32 +1,25 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 
+type OrderStatus = 'pending_payment' | 'paid' | 'processing' | 'shipped' | 'completed' | 'cancelled' | 'refunded'
+
 interface AdminOrder {
   id: string
   customer: string
   items: string
   total: number
-  paymentStatus: 'approved' | 'pending' | 'rejected'
-  status: 'pending_payment' | 'paid' | 'processing' | 'shipped' | 'completed' | 'cancelled' | 'refunded'
+  paymentStatus: string | null
+  status: OrderStatus
   date: string
 }
 
-// TODO: reemplazar por datos reales cuando exista GET /api/admin/orders.
-const { data: fetchedOrders } = await useFetch<AdminOrder[]>('/api/admin/orders', {
+const { data: fetchedOrders, pending } = await useFetch<AdminOrder[]>('/api/admin/orders', {
   default: () => [],
 })
 
-const mockOrders: AdminOrder[] = [
-  { id: '195EB1A3', customer: 'Cristopher Carrasco', items: '2x Disco Duro Sólido 1TB', total: 605.00, paymentStatus: 'pending', status: 'pending_payment', date: '2026-08-11' },
-  { id: 'FD6474AB', customer: 'Ana Torres', items: '1x Disco Duro Sólido 1TB', total: 310.00, paymentStatus: 'approved', status: 'paid', date: '2026-08-10' },
-  { id: '9C21F0E4', customer: 'Luis Ramírez', items: '1x Formateo e Instalación', total: 89.90, paymentStatus: 'approved', status: 'shipped', date: '2026-08-09' },
-  { id: '7B8A6D12', customer: 'María Quispe', items: '1x Suite Ofimática 2026', total: 1250.00, paymentStatus: 'approved', status: 'completed', date: '2026-08-07' },
-  { id: '2E4C9A31', customer: 'Jorge Salinas', items: '1x Mouse Inalámbrico', total: 89.90, paymentStatus: 'rejected', status: 'cancelled', date: '2026-08-06' },
-]
+const orders = computed(() => fetchedOrders.value ?? [])
 
-const orders = computed(() => fetchedOrders.value?.length ? fetchedOrders.value : mockOrders)
-
-const statusLabels: Record<AdminOrder['status'], string> = {
+const statusLabels: Record<OrderStatus, string> = {
   pending_payment: 'Pendiente de pago',
   paid: 'Pagado',
   processing: 'En proceso',
@@ -35,13 +28,28 @@ const statusLabels: Record<AdminOrder['status'], string> = {
   cancelled: 'Cancelado',
   refunded: 'Reembolsado',
 }
-const paymentLabels: Record<AdminOrder['paymentStatus'], string> = {
+// Los valores reales vienen tal cual los devuelve Mercado Pago (approved,
+// pending, in_process, rejected, cancelled, refunded, etc.); se cubren los
+// mas comunes y el resto cae al fallback (texto crudo capitalizado).
+const paymentLabels: Record<string, string> = {
   approved: 'Aprobado',
   pending: 'Pendiente',
+  in_process: 'En revisión',
   rejected: 'Rechazado',
+  cancelled: 'Cancelado',
+  refunded: 'Reembolsado',
 }
 
-const statusFilter = ref<'all' | AdminOrder['status']>('all')
+function paymentLabel(status: string | null) {
+  if (!status) return 'Sin registrar'
+  return paymentLabels[status] ?? status
+}
+
+function formatDate(value: string) {
+  return new Date(value).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+const statusFilter = ref<'all' | OrderStatus>('all')
 const filtered = computed(() =>
   orders.value.filter(o => statusFilter.value === 'all' || o.status === statusFilter.value),
 )
@@ -77,7 +85,8 @@ const filterOptions = [
     </div>
 
     <div class="panel">
-      <table class="admin-table">
+      <p v-if="pending" class="orders-page__empty">Cargando órdenes…</p>
+      <table v-else class="admin-table">
         <thead>
           <tr>
             <th>Orden</th>
@@ -91,13 +100,13 @@ const filterOptions = [
         </thead>
         <tbody>
           <tr v-for="order in filtered" :key="order.id">
-            <td class="admin-table__mono">#{{ order.id }}</td>
+            <td class="admin-table__mono">#{{ order.id.slice(0, 8).toUpperCase() }}</td>
             <td>{{ order.customer }}</td>
             <td class="orders-page__items">{{ order.items }}</td>
             <td class="admin-table__mono">S/ {{ order.total.toFixed(2) }}</td>
-            <td><span class="payment-badge" :class="`is-${order.paymentStatus}`">{{ paymentLabels[order.paymentStatus] }}</span></td>
+            <td><span class="payment-badge" :class="`is-${order.paymentStatus}`">{{ paymentLabel(order.paymentStatus) }}</span></td>
             <td><span class="status-badge" :class="`is-${order.status}`">{{ statusLabels[order.status] }}</span></td>
-            <td class="orders-page__date">{{ order.date }}</td>
+            <td class="orders-page__date">{{ formatDate(order.date) }}</td>
           </tr>
           <tr v-if="filtered.length === 0">
             <td colspan="7" class="orders-page__empty">Sin órdenes para este filtro.</td>
