@@ -25,7 +25,9 @@ async function handleLogin() {
   loading.value = false
 
   if (error) {
-    errorMsg.value = error.message === 'Invalid login credentials'
+    // "Email not confirmed" tambien se generaliza: distinguirlo de credenciales
+    // invalidas confirmaria que el correo existe (fuga de existencia de cuentas).
+    errorMsg.value = ['Invalid login credentials', 'Email not confirmed'].includes(error.message)
       ? 'Correo o contraseña incorrectos.'
       : error.message
     return

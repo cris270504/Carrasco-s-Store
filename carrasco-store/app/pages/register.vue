@@ -36,7 +36,12 @@ async function handleRegister() {
   loading.value = false
 
   if (error) {
-    errorMsg.value = error.message
+    // Mensaje generico para "ya existe una cuenta con este correo": mostrar
+    // el error de Supabase tal cual confirmaria que el correo esta
+    // registrado (fuga de existencia de cuentas).
+    errorMsg.value = /already registered|already exists/i.test(error.message)
+      ? 'No pudimos completar el registro. Si ya tienes una cuenta, intenta iniciar sesión.'
+      : error.message
     return
   }
 

@@ -4,13 +4,15 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 // Valida el header x-signature que Mercado Pago envia en cada webhook, segun
 // su esquema documentado: HMAC-SHA256 sobre "id:<dataId>;request-id:<x-request-id>;ts:<ts>;"
 // usando la clave secreta del webhook (distinta del access token).
-// Si MP_WEBHOOK_SECRET no esta configurada, no se puede verificar; se deja pasar
-// con un aviso en logs en vez de romper el flujo (igual que MP_ACCESS_TOKEN/RESEND_API_KEY).
+// A diferencia de MP_ACCESS_TOKEN/RESEND_API_KEY (features que simplemente no
+// pueden funcionar sin su clave), esto es un control de seguridad: si
+// MP_WEBHOOK_SECRET falta, se falla CERRADO (se rechaza la notificacion) en
+// vez de aceptar cualquier payload sin autenticar.
 export function verifyMpWebhookSignature(event: H3Event, dataId: string): boolean {
   const secret = process.env.MP_WEBHOOK_SECRET
   if (!secret) {
-    console.warn('[MP] MP_WEBHOOK_SECRET no configurada: no se pudo verificar el origen del webhook')
-    return true
+    console.error('[MP] MP_WEBHOOK_SECRET no configurada: se rechaza el webhook (fail-closed)')
+    return false
   }
 
   const signatureHeader = getHeader(event, 'x-signature')

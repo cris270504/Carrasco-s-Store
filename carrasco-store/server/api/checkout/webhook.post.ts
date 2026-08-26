@@ -4,6 +4,8 @@ import { orders } from '../../database/schema'
 // Mercado Pago notifica pagos por POST (webhooks v2: { type, data: { id } })
 // o por query string (IPN legado: ?topic=payment&id=...). Debe responder rapido.
 export default defineEventHandler(async (event) => {
+  enforceRateLimit(event, { key: 'checkout-webhook', limit: 60, windowMs: 60_000 })
+
   const body = await readBody(event).catch(() => null)
   const query = getQuery(event)
 

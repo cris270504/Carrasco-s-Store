@@ -7,6 +7,10 @@ export default defineNuxtPlugin(() => {
 
   supabase.auth.onAuthStateChange((event) => {
     if (event === 'PASSWORD_RECOVERY') {
+      // Marca que esta pestaña llego aca via el link de recuperacion: es lo
+      // unico que distingue esta sesion de la de un usuario ya logueado que
+      // simplemente navegue a /restablecer-password (ver esa pagina).
+      sessionStorage.setItem('password-recovery', '1')
       router.push('/restablecer-password')
     }
   })

@@ -35,11 +35,6 @@ export default defineNuxtConfig({
   sitemap: {
     exclude: ['/admin/**', '/cart', '/checkout/**', '/dashboard', '/favoritos', '/login', '/register', '/recuperar', '/restablecer-password'],
   },
-  runtimeConfig: {
-    public: {
-      adminEmails: process.env.ADMIN_EMAILS || '',
-    },
-  },
   nitro: {
     routeRules: {
       '/**': {

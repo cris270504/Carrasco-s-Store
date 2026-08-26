@@ -9,6 +9,10 @@ function storageKey(userId: string) {
 if (import.meta.client) {
   watch(user, (current) => {
     if (!current) return
+    // No mostrar la bienvenida encima del flujo de "nueva contraseña": la
+    // sesion temporal de recuperacion tambien pone `user`, y se solaparia
+    // con el formulario de app/pages/restablecer-password.vue.
+    if (sessionStorage.getItem('password-recovery')) return
 
     const key = storageKey(current.id)
     if (localStorage.getItem(key)) return

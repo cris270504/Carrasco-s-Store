@@ -46,7 +46,9 @@ export default defineEventHandler(async (event) => {
     price,
     description: body.description !== undefined ? (String(body.description).trim() || null) : existing.description,
     brand: body.brand !== undefined ? (String(body.brand).trim() || null) : existing.brand,
-    categoryId: body.categoryId !== undefined ? (body.categoryId || null) : existing.categoryId,
+    categoryId: body.categoryId !== undefined
+      ? (typeof body.categoryId === 'string' && body.categoryId.trim() ? body.categoryId.trim() : null)
+      : existing.categoryId,
     images: Array.isArray(body.images)
       ? body.images.filter((url: unknown) => typeof url === 'string' && url.trim()).map((url: string) => url.trim())
       : existing.images,

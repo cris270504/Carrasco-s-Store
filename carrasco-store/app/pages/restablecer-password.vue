@@ -1,10 +1,16 @@
 <script setup lang="ts">
-// Se llega aca via el plugin app/plugins/auth-recovery.client.ts, que
-// intercepta el evento PASSWORD_RECOVERY del link de correo. Sin middleware
-// 'auth': la sesion temporal de recuperacion ya la establece Supabase al
-// procesar el link, no se necesita un guard extra que pueda interferir.
+// Sin middleware 'auth': la sesion temporal de recuperacion ya la establece
+// Supabase al procesar el link, un guard de sesion normal no aplica aca.
+// En cambio, SI se exige el flag que pone app/plugins/auth-recovery.client.ts
+// al recibir el evento PASSWORD_RECOVERY: sin el, cualquier usuario que ya
+// tenga una sesion normal iniciada podria entrar directo a esta URL y
+// cambiar su contraseña sin volver a autenticarse.
 const supabase = useSupabaseClient()
 const toast = useToast()
+
+if (import.meta.client && !sessionStorage.getItem('password-recovery')) {
+  await navigateTo('/login', { replace: true })
+}
 
 const password = ref('')
 const confirmPassword = ref('')
@@ -25,12 +31,18 @@ async function handleSubmit() {
 
   loading.value = true
   const { error } = await supabase.auth.updateUser({ password: password.value })
-  loading.value = false
 
   if (error) {
+    loading.value = false
     errorMsg.value = error.message
     return
   }
+
+  sessionStorage.removeItem('password-recovery')
+  // Invalida cualquier otra sesion activa (ej. un token robado que motivo el
+  // cambio de contraseña): la de esta pestaña queda como la unica valida.
+  await supabase.auth.signOut({ scope: 'others' })
+  loading.value = false
 
   toast.success('Tu contraseña fue actualizada.')
   await navigateTo('/dashboard')

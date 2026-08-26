@@ -58,7 +58,7 @@ export default defineEventHandler(async (event) => {
     slug,
     description: body.description ? String(body.description).trim() : null,
     brand: body.brand ? String(body.brand).trim() : null,
-    categoryId: body.categoryId || null,
+    categoryId: typeof body.categoryId === 'string' && body.categoryId.trim() ? body.categoryId.trim() : null,
     price: price.toFixed(2),
     type,
     stock,
