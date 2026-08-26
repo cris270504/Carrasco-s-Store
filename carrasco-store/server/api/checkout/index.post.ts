@@ -35,9 +35,11 @@ export default defineEventHandler(async (event) => {
   const subtotal = cartData.items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0)
   const hasPhysicalItem = cartData.items.some(i => i.itemType === 'physical')
   const { shippingFlatRate } = await getStoreSettings()
+  // El IGV ya esta incluido en unitPrice (ver shared/utils/pricing.ts): se
+  // guarda como referencia para la orden, pero no se suma otra vez al total.
   const tax = calcTax(subtotal)
   const shippingCost = calcShipping(hasPhysicalItem, shippingFlatRate)
-  const total = subtotal + tax + shippingCost
+  const total = subtotal + shippingCost
 
   const [order] = await db.insert(orders).values({
     userId: user.sub,

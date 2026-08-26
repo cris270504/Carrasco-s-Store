@@ -219,6 +219,7 @@ async function handleSubmit() {
           <div class="field">
             <label for="pf-price">Precio (S/)</label>
             <input id="pf-price" v-model="form.price" type="number" step="0.01" min="0.01" required>
+            <p class="field__hint">Precio final que paga el cliente, IGV incluido (18%). No agregues el IGV aparte.</p>
           </div>
           <div class="field">
             <label for="pf-type">Tipo</label>

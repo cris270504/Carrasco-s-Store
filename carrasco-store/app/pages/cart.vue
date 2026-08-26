@@ -13,8 +13,10 @@ const typeLabels: Record<string, string> = {
 
 const hasPhysicalItem = computed(() => items.value.some(i => i.itemType === 'physical'))
 const shipping = computed(() => calcShipping(hasPhysicalItem.value, settings.value?.shippingFlatRate))
+// El IGV ya esta incluido en el precio de cada producto: es solo informativo,
+// no se suma al total (ver shared/utils/pricing.ts).
 const tax = computed(() => calcTax(subtotal.value))
-const total = computed(() => subtotal.value + shipping.value + tax.value)
+const total = computed(() => subtotal.value + shipping.value)
 
 const checkingOut = ref(false)
 const checkoutError = ref('')
@@ -119,7 +121,7 @@ async function handleCheckout() {
           <span>{{ shipping > 0 ? `S/ ${shipping.toFixed(2)}` : 'Gratis' }}</span>
         </div>
         <div class="cart-summary__row cart-summary__row--muted">
-          <span>IGV (18%)</span>
+          <span>IGV incluido (18%)</span>
           <span>S/ {{ tax.toFixed(2) }}</span>
         </div>
         <div class="ticket-divider" />
