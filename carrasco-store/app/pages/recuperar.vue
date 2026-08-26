@@ -1,79 +1,70 @@
 <script setup lang="ts">
 const supabase = useSupabaseClient()
-const user = useSupabaseUser()
-const route = useRoute()
 
 const email = ref('')
-const password = ref('')
-const errorMsg = ref('')
 const loading = ref(false)
+const errorMsg = ref('')
+const sent = ref(false)
 
-// Si ya hay sesión activa, no tiene sentido mostrar el formulario de login.
-if (user.value) {
-  await navigateTo((route.query.redirect as string) || '/dashboard')
-}
-
-async function handleLogin() {
+async function handleSubmit() {
   errorMsg.value = ''
   loading.value = true
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email: email.value.trim(),
-    password: password.value,
+  const { error } = await supabase.auth.resetPasswordForEmail(email.value.trim(), {
+    redirectTo: `${window.location.origin}/`,
   })
 
   loading.value = false
 
   if (error) {
-    errorMsg.value = error.message === 'Invalid login credentials'
-      ? 'Correo o contraseña incorrectos.'
-      : error.message
+    errorMsg.value = error.message
     return
   }
 
-  const redirectTo = (route.query.redirect as string) || '/dashboard'
-  await navigateTo(redirectTo)
+  // Supabase no revela si el correo existe o no (evita filtrar cuentas
+  // registradas): el mensaje de exito es el mismo en ambos casos.
+  sent.value = true
 }
 </script>
 
 <template>
   <div class="auth-page">
-    <form class="auth-card" @submit.prevent="handleLogin">
+    <div class="auth-card">
       <p class="auth-card__eyebrow">Acceso</p>
-      <h1>Inicia sesión</h1>
-      <p class="auth-card__subtitle">Consulta tus pedidos, licencias y agendamientos.</p>
+      <h1>Recupera tu contraseña</h1>
 
-      <label for="email">Correo electrónico</label>
-      <input
-        id="email"
-        v-model="email"
-        type="email"
-        required
-        autocomplete="email"
-        placeholder="tucorreo@ejemplo.com"
-      >
+      <template v-if="sent">
+        <p class="auth-card__subtitle">
+          Si <strong>{{ email }}</strong> tiene una cuenta con nosotros, te enviamos un correo con
+          instrucciones para crear una nueva contraseña.
+        </p>
+        <NuxtLink to="/login" class="btn btn-outline auth-card__submit">Volver a iniciar sesión</NuxtLink>
+      </template>
 
-      <label for="password">Contraseña</label>
-      <input
-        id="password"
-        v-model="password"
-        type="password"
-        required
-        autocomplete="current-password"
-        placeholder="••••••••"
-      >
-      <NuxtLink to="/recuperar" class="auth-card__forgot">¿Olvidaste tu contraseña?</NuxtLink>
+      <form v-else @submit.prevent="handleSubmit">
+        <p class="auth-card__subtitle">Te enviaremos un enlace a tu correo para crear una nueva contraseña.</p>
 
-      <p v-if="errorMsg" class="auth-card__error" role="alert">{{ errorMsg }}</p>
+        <label for="email">Correo electrónico</label>
+        <input
+          id="email"
+          v-model="email"
+          type="email"
+          required
+          autocomplete="email"
+          placeholder="tucorreo@ejemplo.com"
+        >
 
-      <button type="submit" class="btn btn-primary auth-card__submit" :disabled="loading">
-        {{ loading ? 'Ingresando…' : 'Ingresar' }}
-      </button>
+        <p v-if="errorMsg" class="auth-card__error" role="alert">{{ errorMsg }}</p>
 
-      <p class="auth-card__footer">
-        ¿No tienes cuenta? <NuxtLink to="/register">Regístrate</NuxtLink>
-      </p>
-    </form>
+        <button type="submit" class="btn btn-primary auth-card__submit" :disabled="loading">
+          {{ loading ? 'Enviando…' : 'Enviar enlace' }}
+        </button>
+
+        <p class="auth-card__footer">
+          <NuxtLink to="/login">← Volver a iniciar sesión</NuxtLink>
+        </p>
+      </form>
+    </div>
   </div>
 </template>
 
@@ -137,16 +128,6 @@ async function handleLogin() {
 .auth-card__submit {
   margin-top: 0.75rem;
   width: 100%;
-}
-.auth-card__forgot {
-  align-self: flex-end;
-  font-size: 0.8rem;
-  color: var(--color-accent);
-  text-decoration: none;
-  margin-top: -0.15rem;
-}
-.auth-card__forgot:hover {
-  text-decoration: underline;
 }
 .auth-card__error {
   color: var(--color-danger);

@@ -33,7 +33,7 @@ export default defineNuxtConfig({
     url: process.env.NUXT_PUBLIC_SITE_URL || 'https://carrasco-store.example.com',
   },
   sitemap: {
-    exclude: ['/admin/**', '/cart', '/checkout/**', '/dashboard', '/favoritos', '/login', '/register'],
+    exclude: ['/admin/**', '/cart', '/checkout/**', '/dashboard', '/favoritos', '/login', '/register', '/recuperar', '/restablecer-password'],
   },
   runtimeConfig: {
     public: {

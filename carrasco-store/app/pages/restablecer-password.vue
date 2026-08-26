@@ -1,78 +1,76 @@
 <script setup lang="ts">
+// Se llega aca via el plugin app/plugins/auth-recovery.client.ts, que
+// intercepta el evento PASSWORD_RECOVERY del link de correo. Sin middleware
+// 'auth': la sesion temporal de recuperacion ya la establece Supabase al
+// procesar el link, no se necesita un guard extra que pueda interferir.
 const supabase = useSupabaseClient()
-const user = useSupabaseUser()
-const route = useRoute()
+const toast = useToast()
 
-const email = ref('')
 const password = ref('')
+const confirmPassword = ref('')
 const errorMsg = ref('')
 const loading = ref(false)
 
-// Si ya hay sesión activa, no tiene sentido mostrar el formulario de login.
-if (user.value) {
-  await navigateTo((route.query.redirect as string) || '/dashboard')
-}
-
-async function handleLogin() {
+async function handleSubmit() {
   errorMsg.value = ''
-  loading.value = true
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email: email.value.trim(),
-    password: password.value,
-  })
-
-  loading.value = false
-
-  if (error) {
-    errorMsg.value = error.message === 'Invalid login credentials'
-      ? 'Correo o contraseña incorrectos.'
-      : error.message
+  if (password.value.length < 6) {
+    errorMsg.value = 'La contraseña debe tener al menos 6 caracteres.'
+    return
+  }
+  if (password.value !== confirmPassword.value) {
+    errorMsg.value = 'Las contraseñas no coinciden.'
     return
   }
 
-  const redirectTo = (route.query.redirect as string) || '/dashboard'
-  await navigateTo(redirectTo)
+  loading.value = true
+  const { error } = await supabase.auth.updateUser({ password: password.value })
+  loading.value = false
+
+  if (error) {
+    errorMsg.value = error.message
+    return
+  }
+
+  toast.success('Tu contraseña fue actualizada.')
+  await navigateTo('/dashboard')
 }
 </script>
 
 <template>
   <div class="auth-page">
-    <form class="auth-card" @submit.prevent="handleLogin">
-      <p class="auth-card__eyebrow">Acceso</p>
-      <h1>Inicia sesión</h1>
-      <p class="auth-card__subtitle">Consulta tus pedidos, licencias y agendamientos.</p>
+    <form class="auth-card" @submit.prevent="handleSubmit">
+      <p class="auth-card__eyebrow">Nueva contraseña</p>
+      <h1>Crea tu nueva contraseña</h1>
+      <p class="auth-card__subtitle">Elige una contraseña nueva para tu cuenta.</p>
 
-      <label for="email">Correo electrónico</label>
-      <input
-        id="email"
-        v-model="email"
-        type="email"
-        required
-        autocomplete="email"
-        placeholder="tucorreo@ejemplo.com"
-      >
-
-      <label for="password">Contraseña</label>
+      <label for="password">Nueva contraseña</label>
       <input
         id="password"
         v-model="password"
         type="password"
         required
-        autocomplete="current-password"
-        placeholder="••••••••"
+        minlength="6"
+        autocomplete="new-password"
+        placeholder="Mínimo 6 caracteres"
       >
-      <NuxtLink to="/recuperar" class="auth-card__forgot">¿Olvidaste tu contraseña?</NuxtLink>
+
+      <label for="confirmPassword">Confirmar contraseña</label>
+      <input
+        id="confirmPassword"
+        v-model="confirmPassword"
+        type="password"
+        required
+        minlength="6"
+        autocomplete="new-password"
+        placeholder="Repite tu contraseña"
+      >
 
       <p v-if="errorMsg" class="auth-card__error" role="alert">{{ errorMsg }}</p>
 
       <button type="submit" class="btn btn-primary auth-card__submit" :disabled="loading">
-        {{ loading ? 'Ingresando…' : 'Ingresar' }}
+        {{ loading ? 'Guardando…' : 'Guardar contraseña' }}
       </button>
-
-      <p class="auth-card__footer">
-        ¿No tienes cuenta? <NuxtLink to="/register">Regístrate</NuxtLink>
-      </p>
     </form>
   </div>
 </template>
@@ -138,30 +136,9 @@ async function handleLogin() {
   margin-top: 0.75rem;
   width: 100%;
 }
-.auth-card__forgot {
-  align-self: flex-end;
-  font-size: 0.8rem;
-  color: var(--color-accent);
-  text-decoration: none;
-  margin-top: -0.15rem;
-}
-.auth-card__forgot:hover {
-  text-decoration: underline;
-}
 .auth-card__error {
   color: var(--color-danger);
   font-size: 0.85rem;
   margin: 0;
-}
-.auth-card__footer {
-  text-align: center;
-  font-size: 0.85rem;
-  color: var(--color-ink-muted);
-  margin-top: 0.75rem;
-}
-.auth-card__footer a {
-  color: var(--color-accent);
-  font-weight: 600;
-  text-decoration: none;
 }
 </style>

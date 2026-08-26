@@ -1,0 +1,39 @@
+# Fragmento de referencia para la configuracion de Auth > Emails de Supabase.
+# Este repo no tiene un proyecto Supabase CLI inicializado (no se corrio
+# `supabase init`/`supabase link`), asi que este archivo no se aplica solo con
+# `supabase db push`. Para usarlo:
+#
+#   a) Si en algun momento inicializas el CLI (`supabase init`), fusiona este
+#      bloque [auth.email] / [auth.rate_limit] en el config.toml completo que
+#      genere el CLI, y corre `supabase config push`.
+#   b) O, mas simple, copia estos mismos valores a mano en el Dashboard:
+#      Authentication > Emails (plantillas + "Confirm email") y
+#      Authentication > Rate Limits (email_sent).
+#
+# Los .html referenciados abajo viven en ./supabase/templates/.
+
+[auth.email]
+enable_signup = true
+enable_confirmations = true   # obliga a confirmar el correo antes de dejar loguear
+max_frequency = "1m0s"        # minutos entre reenvios del mismo tipo de correo
+
+[auth.email.template.confirmation]
+subject = "Confirma tu correo electrónico · Carrasco Store"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "Restablece tu contraseña · Carrasco Store"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.rate_limit]
+email_sent = 2   # correos/hora — subir esto en produccion real
+
+# Opcional pero recomendado para produccion real: el SMTP por defecto de
+# Supabase esta pensado para pruebas (2 correos/hora). Con un proveedor propio
+# (Resend, SendGrid, etc.) ese limite no aplica.
+# [auth.email.smtp]
+# host = "smtp.resend.com"
+# port = 465
+# user = "resend"
+# pass = "env(RESEND_SMTP_PASSWORD)"
+# sender_name = "Carrasco Store"
