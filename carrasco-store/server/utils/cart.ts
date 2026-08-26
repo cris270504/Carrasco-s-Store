@@ -57,14 +57,16 @@ export async function getProductForCart(productId: string, variantId: string | n
   if (!product || !product.isActive) return null
 
   let unitPrice = Number(product.price)
+  let stock = product.stock ?? 0
 
   if (variantId) {
     const variant = await db.query.productVariants.findFirst({ where: eq(productVariants.id, variantId) })
     if (!variant || variant.productId !== productId) return null
     unitPrice += Number(variant.priceModifier ?? 0)
+    stock = variant.stock ?? 0
   }
 
-  return { product, unitPrice }
+  return { product, unitPrice, stock }
 }
 
 function formatCartItem(item: {

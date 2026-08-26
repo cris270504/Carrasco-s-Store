@@ -27,11 +27,20 @@ export default defineEventHandler(async (event) => {
   const existing = await findCartItem(cart.id, body.productId, variantId)
 
   if (existing) {
+    // El tope de 50 aplicaba solo al insert inicial: sin este Math.min, sumar
+    // en llamadas sucesivas (ej. 50 + 50) lo dejaba sin limite real.
+    const nextQuantity = Math.min(existing.quantity + quantity, 50)
+    if (found.product.type === 'physical' && nextQuantity > found.stock) {
+      throw createError({ statusCode: 400, statusMessage: `Stock insuficiente (disponible: ${found.stock})` })
+    }
     await db.update(cartItems)
-      .set({ quantity: existing.quantity + quantity })
+      .set({ quantity: nextQuantity })
       .where(eq(cartItems.id, existing.id))
   }
   else {
+    if (found.product.type === 'physical' && quantity > found.stock) {
+      throw createError({ statusCode: 400, statusMessage: `Stock insuficiente (disponible: ${found.stock})` })
+    }
     await db.insert(cartItems).values({
       cartId: cart.id,
       productId: body.productId,

@@ -1,5 +1,5 @@
 import type { H3Event } from 'h3'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, gte, sql } from 'drizzle-orm'
 import { serverSupabaseServiceRole } from '#supabase/server'
 import {
   cartItems,
@@ -62,34 +62,60 @@ export async function fulfillOrder(event: H3Event, orderId: string) {
   }
 }
 
+// Decremento atomico: solo resta si hay stock suficiente EN LA MISMA sentencia
+// (WHERE stock >= qty), asi que dos ordenes concurrentes para el mismo
+// producto/variante nunca pueden restar ambas del mismo stock insuficiente
+// (a diferencia de un SELECT-then-UPDATE en JS, que es una carrera clasica).
 async function fulfillPhysical(item: OrderItem) {
   if (item.variantId) {
-    const variant = await db.query.productVariants.findFirst({ where: eq(productVariants.id, item.variantId) })
-    if (variant) {
-      await db.update(productVariants)
-        .set({ stock: Math.max(0, (variant.stock ?? 0) - item.quantity) })
-        .where(eq(productVariants.id, item.variantId))
+    const [decremented] = await db.update(productVariants)
+      .set({ stock: sql`greatest(${productVariants.stock} - ${item.quantity}, 0)` })
+      .where(and(eq(productVariants.id, item.variantId), gte(productVariants.stock, item.quantity)))
+      .returning({ id: productVariants.id })
+
+    if (!decremented) {
+      // El pago ya esta aprobado (no se puede "des-vender"): se fuerza el
+      // stock a 0 y se deja constancia para reconciliacion manual en vez de
+      // fallar en silencio o dejar un stock negativo escondido.
+      await db.update(productVariants).set({ stock: 0 }).where(eq(productVariants.id, item.variantId))
+      console.warn(`[fulfillment] Sobreventa detectada: variante ${item.variantId}, orderItem ${item.id}`)
     }
     return
   }
 
-  const product = await db.query.products.findFirst({ where: eq(products.id, item.productId) })
-  if (product) {
-    await db.update(products)
-      .set({ stock: Math.max(0, (product.stock ?? 0) - item.quantity) })
-      .where(eq(products.id, item.productId))
+  const [decremented] = await db.update(products)
+    .set({ stock: sql`greatest(${products.stock} - ${item.quantity}, 0)` })
+    .where(and(eq(products.id, item.productId), gte(products.stock, item.quantity)))
+    .returning({ id: products.id })
+
+  if (!decremented) {
+    await db.update(products).set({ stock: 0 }).where(eq(products.id, item.productId))
+    console.warn(`[fulfillment] Sobreventa detectada: producto ${item.productId}, orderItem ${item.id}`)
   }
 }
 
+// Reclamo atomico de una licencia disponible: SELECT ... FOR UPDATE SKIP LOCKED
+// dentro de una transaccion bloquea la fila elegida hasta el commit, asi que
+// una segunda transaccion concurrente para el mismo producto directamente
+// salta esa fila (SKIP LOCKED) y toma la siguiente disponible (o ninguna) en
+// vez de leer la misma fila "available" que la primera antes de que confirme.
 async function fulfillDigital(event: H3Event, item: OrderItem, userId: string) {
-  const license = await db.query.digitalLicenses.findFirst({
-    where: and(eq(digitalLicenses.productId, item.productId), eq(digitalLicenses.status, 'available')),
-  })
-  if (!license) return // sin stock de licencias: la orden queda para atencion manual
+  const claimedLicense = await db.transaction(async (tx) => {
+    const [license] = await tx.select().from(digitalLicenses)
+      .where(and(eq(digitalLicenses.productId, item.productId), eq(digitalLicenses.status, 'available')))
+      .limit(1)
+      .for('update', { skipLocked: true })
 
-  await db.update(digitalLicenses)
-    .set({ status: 'reserved', orderItemId: item.id })
-    .where(eq(digitalLicenses.id, license.id))
+    if (!license) return null
+
+    await tx.update(digitalLicenses)
+      .set({ status: 'reserved', orderItemId: item.id })
+      .where(eq(digitalLicenses.id, license.id))
+
+    return license
+  })
+
+  if (!claimedLicense) return // sin stock de licencias: la orden queda para atencion manual
 
   const product = await db.query.products.findFirst({ where: eq(products.id, item.productId) })
   if (!product) return
@@ -99,11 +125,11 @@ async function fulfillDigital(event: H3Event, item: OrderItem, userId: string) {
     const { data, error } = await supabase.auth.admin.getUserById(userId)
     if (error || !data.user?.email) throw new Error('sin email de usuario')
 
-    await sendLicenseEmail({ to: data.user.email, productName: product.name, code: decryptLicenseCode(license.code) })
+    await sendLicenseEmail({ to: data.user.email, productName: product.name, code: decryptLicenseCode(claimedLicense.code) })
 
     await db.update(digitalLicenses)
       .set({ status: 'delivered', deliveredAt: new Date() })
-      .where(eq(digitalLicenses.id, license.id))
+      .where(eq(digitalLicenses.id, claimedLicense.id))
   }
   catch {
     // el codigo queda 'reserved' si falla el envio (credenciales de Resend/Supabase

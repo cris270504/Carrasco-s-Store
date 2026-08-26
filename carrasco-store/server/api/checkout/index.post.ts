@@ -17,7 +17,19 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'El carrito esta vacio' })
   }
 
-  for (const item of cartData.items) {
+  // El precio se re-verifica contra el catalogo en este momento (nunca se
+  // confia en el snapshot guardado en cart_items al agregarlo): si el admin
+  // cambio el precio despues de que el cliente lo agrego al carrito, se cobra
+  // el precio vigente, igual que ya se hace con el stock.
+  const pricedItems = await Promise.all(cartData.items.map(async (item) => {
+    const found = await getProductForCart(item.productId, item.variantId)
+    if (!found) {
+      throw createError({ statusCode: 400, statusMessage: `"${item.name}" ya no está disponible` })
+    }
+    return { ...item, unitPrice: found.unitPrice }
+  }))
+
+  for (const item of pricedItems) {
     if (item.itemType !== 'physical') continue
 
     const available = item.variantId
@@ -32,8 +44,8 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const subtotal = cartData.items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0)
-  const hasPhysicalItem = cartData.items.some(i => i.itemType === 'physical')
+  const subtotal = pricedItems.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0)
+  const hasPhysicalItem = pricedItems.some(i => i.itemType === 'physical')
   const { shippingFlatRate } = await getStoreSettings()
   // El IGV ya esta incluido en unitPrice (ver shared/utils/pricing.ts): se
   // guarda como referencia para la orden, pero no se suma otra vez al total.
@@ -51,7 +63,7 @@ export default defineEventHandler(async (event) => {
   }).returning()
 
   await db.insert(orderItems).values(
-    cartData.items.map(item => ({
+    pricedItems.map(item => ({
       orderId: order!.id,
       productId: item.productId,
       variantId: item.variantId,
@@ -65,7 +77,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const preference = await createMpPreference({
-      items: cartData.items.map(item => ({
+      items: pricedItems.map(item => ({
         id: item.productId,
         title: item.name,
         quantity: item.quantity,
