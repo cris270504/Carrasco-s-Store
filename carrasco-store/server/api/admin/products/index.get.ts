@@ -1,5 +1,6 @@
-import { and, eq, ilike, inArray } from 'drizzle-orm'
-import { orderItems, products } from '../../../database/schema'
+import { and, eq, ilike } from 'drizzle-orm'
+import { products } from '../../../database/schema'
+import { getEffectiveStock } from '../../../../shared/utils/stock'
 
 interface AdminProductRow {
   type: 'service' | 'physical' | 'digital'
@@ -31,13 +32,10 @@ export default defineEventHandler(async (event) => {
     orderBy: (table, { desc }) => [desc(table.createdAt)],
   })
 
-  // Determina de una sola vez que productos tienen ventas (order_items), para
-  // que la UI pueda anticipar si "eliminar" va a desactivar o borrar de verdad.
-  const productIds = rows.map(p => p.id)
-  const soldRows = productIds.length > 0
-    ? await db.selectDistinct({ productId: orderItems.productId }).from(orderItems).where(inArray(orderItems.productId, productIds))
-    : []
-  const soldIds = new Set(soldRows.map(r => r.productId))
+  // Determina de una sola vez que productos tienen ventas, para que la UI
+  // pueda anticipar si "eliminar" va a desactivar o borrar de verdad (misma
+  // regla que usa el DELETE, ver server/utils/productSales.ts).
+  const soldIds = await productsWithSales(rows.map(p => p.id))
 
   return rows.map(product => ({
     id: product.id,
@@ -55,11 +53,11 @@ export default defineEventHandler(async (event) => {
 
 function buildDetail(product: AdminProductRow): string {
   if (product.type === 'physical') {
+    const totalStock = getEffectiveStock(product)
     if (product.variants.length > 0) {
-      const totalStock = product.variants.reduce((sum, v) => sum + (v.stock ?? 0), 0)
       return `${product.variants.length} variante(s) · ${totalStock} en stock`
     }
-    return `${product.stock ?? 0} en stock`
+    return `${totalStock} en stock`
   }
 
   if (product.type === 'digital') {

@@ -40,3 +40,9 @@ export async function listAllAuthUsers(event: H3Event): Promise<AuthUserSummary[
 
   return users
 }
+
+// Etiqueta consistente para mostrar un cliente por id (dashboard, listado de
+// ordenes): mismo fallback en todos lados en vez de reimplementarlo por endpoint.
+export function toUserNameMap(users: AuthUserSummary[]): Map<string, string> {
+  return new Map(users.map(u => [u.id, u.fullName || u.email || 'Cliente']))
+}

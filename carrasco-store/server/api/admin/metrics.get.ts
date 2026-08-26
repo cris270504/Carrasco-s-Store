@@ -1,3 +1,5 @@
+import { getEffectiveStock, isOutOfStock } from '../../../shared/utils/stock'
+
 const PAID_STATUSES = new Set(['paid', 'processing', 'shipped', 'completed'])
 
 function startOfDay(date: Date) {
@@ -59,20 +61,11 @@ export default defineEventHandler(async (event) => {
     : null
 
   const activeProducts = allProducts.filter(p => p.isActive).length
-  const outOfStockCount = allProducts.filter((p) => {
-    if (p.type !== 'physical') return false
-    if (p.variants.length > 0) return p.variants.every(v => (v.stock ?? 0) <= 0)
-    return (p.stock ?? 0) <= 0
-  }).length
+  const outOfStockCount = allProducts.filter(isOutOfStock).length
 
   const lowStock = allProducts
     .filter(p => p.type === 'physical')
-    .map(p => ({
-      name: p.name,
-      stock: p.variants.length > 0
-        ? p.variants.reduce((sum, v) => sum + (v.stock ?? 0), 0)
-        : (p.stock ?? 0),
-    }))
+    .map(p => ({ name: p.name, stock: getEffectiveStock(p) }))
     .filter(p => p.stock <= 3)
     .sort((a, b) => a.stock - b.stock)
     .slice(0, 5)
@@ -80,7 +73,7 @@ export default defineEventHandler(async (event) => {
   const newCustomers = authUsers.filter(u => new Date(u.createdAt) >= monthStart).length
   const newCustomersThisWeek = authUsers.filter(u => new Date(u.createdAt) >= weekStart).length
 
-  const nameByUserId = new Map(authUsers.map(u => [u.id, u.fullName || u.email || 'Cliente']))
+  const nameByUserId = toUserNameMap(authUsers)
   const recentOrders = [...allOrders]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5)

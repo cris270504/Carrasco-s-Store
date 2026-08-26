@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { cartItems, orderItems, products } from '../../../database/schema'
+import { cartItems, products } from '../../../database/schema'
 
 // Un producto con historial de ventas (order_items) nunca se borra físicamente:
 // se desactiva para preservar la trazabilidad de órdenes pasadas y porque
@@ -23,12 +23,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Producto no encontrado' })
   }
 
-  const sale = await db.query.orderItems.findFirst({
-    where: eq(orderItems.productId, id),
-    columns: { id: true },
-  })
-
-  if (sale) {
+  if (await productHasSales(id)) {
     await db.update(products).set({ isActive: false }).where(eq(products.id, id))
     return { success: true, mode: 'disabled' as const }
   }

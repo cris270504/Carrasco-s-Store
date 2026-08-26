@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
   })
 
   const authUsers = await listAllAuthUsers(event)
-  const nameByUserId = new Map(authUsers.map(u => [u.id, u.fullName || u.email || 'Cliente']))
+  const nameByUserId = toUserNameMap(authUsers)
 
   return rows.map(order => ({
     id: order.id,
