@@ -8,6 +8,7 @@ const links = [
   { to: '/admin/productos', label: 'Productos', icon: 'box' },
   { to: '/admin/ordenes', label: 'Órdenes', icon: 'receipt' },
   { to: '/admin/usuarios', label: 'Usuarios', icon: 'users' },
+  { to: '/admin/configuracion', label: 'Configuración', icon: 'gear' },
 ] as const
 
 function isActive(to: string, exact?: boolean) {
@@ -50,11 +51,21 @@ async function handleLogout() {
             <path d="M4 2h12v16l-2-1.3L12 18l-2-1.3L8 18l-2-1.3L4 18V2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
             <path d="M6.5 6.5h7M6.5 10h7M6.5 13.5h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
           </svg>
-          <svg v-else width="18" height="18" viewBox="0 0 20 20" fill="none">
+          <svg v-else-if="link.icon === 'users'" width="18" height="18" viewBox="0 0 20 20" fill="none">
             <circle cx="7" cy="6.5" r="2.7" stroke="currentColor" stroke-width="1.5" />
             <path d="M2 17c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
             <circle cx="15" cy="7" r="2.2" stroke="currentColor" stroke-width="1.4" />
             <path d="M13.5 11.2c2.3.3 4 2.2 4 5.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+          </svg>
+          <svg v-else width="18" height="18" viewBox="0 0 20 20" fill="none">
+            <path
+              d="M10 6.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7Z"
+              stroke="currentColor" stroke-width="1.5"
+            />
+            <path
+              d="M10 2.2v1.7M10 16.1v1.7M17.8 10h-1.7M3.9 10H2.2M15.4 4.6l-1.2 1.2M5.8 14.2l-1.2 1.2M15.4 15.4l-1.2-1.2M5.8 5.8 4.6 4.6"
+              stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+            />
           </svg>
           {{ link.label }}
         </NuxtLink>

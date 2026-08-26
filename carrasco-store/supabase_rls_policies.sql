@@ -75,6 +75,17 @@ drop policy if exists "service_details_admin_write" on public.service_details;
 create policy "service_details_admin_write" on public.service_details
   for all using (is_admin()) with check (is_admin());
 
+-- store_settings: configuración global (ej. costo de envío), lectura pública
+alter table public.store_settings enable row level security;
+
+drop policy if exists "store_settings_public_select" on public.store_settings;
+create policy "store_settings_public_select" on public.store_settings
+  for select using (true);
+
+drop policy if exists "store_settings_admin_write" on public.store_settings;
+create policy "store_settings_admin_write" on public.store_settings
+  for all using (is_admin()) with check (is_admin());
+
 -- digital_licenses: contienen códigos sensibles, NUNCA lectura pública
 alter table public.digital_licenses enable row level security;
 

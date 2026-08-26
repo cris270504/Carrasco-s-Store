@@ -185,6 +185,17 @@ export const favorites = pgTable('favorites', {
 })).enableRLS()
 
 // ============================================================
+// CONFIGURACIÓN DE LA TIENDA
+// Fila única (id=1) editable desde /admin/configuracion. Si no existe fila
+// todavía, el backend usa el fallback de shared/utils/pricing.ts.
+// ============================================================
+export const storeSettings = pgTable('store_settings', {
+  id: integer('id').primaryKey().default(1),
+  shippingFlatRate: decimal('shipping_flat_rate', { precision: 10, scale: 2 }).notNull().default('15'),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}).enableRLS()
+
+// ============================================================
 // RELATIONS (para queries anidadas con db.query.products.findMany({ with: {...} }))
 // ============================================================
 export const productsRelations = relations(products, ({ one, many }) => ({

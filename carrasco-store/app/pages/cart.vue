@@ -1,6 +1,9 @@
 <script setup lang="ts">
 const { items, removeItem, setQuantity, subtotal } = useCart()
+const { settings, fetchSettings } = useStoreSettings()
 const user = useSupabaseUser()
+
+if (!settings.value) await fetchSettings()
 
 const typeLabels: Record<string, string> = {
   physical: 'Físico',
@@ -9,7 +12,7 @@ const typeLabels: Record<string, string> = {
 }
 
 const hasPhysicalItem = computed(() => items.value.some(i => i.itemType === 'physical'))
-const shipping = computed(() => calcShipping(hasPhysicalItem.value))
+const shipping = computed(() => calcShipping(hasPhysicalItem.value, settings.value?.shippingFlatRate))
 const tax = computed(() => calcTax(subtotal.value))
 const total = computed(() => subtotal.value + shipping.value + tax.value)
 

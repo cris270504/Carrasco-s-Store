@@ -7,6 +7,9 @@ export function calcTax(subtotal: number) {
   return Math.round(subtotal * IGV_RATE * 100) / 100
 }
 
-export function calcShipping(hasPhysicalItem: boolean) {
-  return hasPhysicalItem ? FLAT_SHIPPING_RATE : 0
+// El costo real se configura en /admin/configuracion (tabla store_settings) y
+// se pasa via el parametro `rate`. FLAT_SHIPPING_RATE queda como fallback
+// mientras no exista fila de configuracion o no se haya podido cargar aun.
+export function calcShipping(hasPhysicalItem: boolean, rate: number = FLAT_SHIPPING_RATE) {
+  return hasPhysicalItem ? rate : 0
 }

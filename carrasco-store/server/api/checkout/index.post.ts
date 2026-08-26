@@ -34,8 +34,9 @@ export default defineEventHandler(async (event) => {
 
   const subtotal = cartData.items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0)
   const hasPhysicalItem = cartData.items.some(i => i.itemType === 'physical')
+  const { shippingFlatRate } = await getStoreSettings()
   const tax = calcTax(subtotal)
-  const shippingCost = calcShipping(hasPhysicalItem)
+  const shippingCost = calcShipping(hasPhysicalItem, shippingFlatRate)
   const total = subtotal + tax + shippingCost
 
   const [order] = await db.insert(orders).values({
