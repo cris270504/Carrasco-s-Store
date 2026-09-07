@@ -1,5 +1,8 @@
 <script setup lang="ts">
 const request = useConfirmState()
+const dialogRef = ref<HTMLElement | null>(null)
+const isOpen = computed(() => !!request.value)
+useFocusTrap(dialogRef, isOpen)
 
 function respond(value: boolean) {
   request.value?.resolve(value)
@@ -20,7 +23,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   <Teleport to="body">
     <Transition name="confirm-fade">
       <div v-if="request" class="confirm-overlay" @click.self="respond(false)">
-        <div class="confirm-dialog" role="alertdialog" aria-modal="true">
+        <div ref="dialogRef" class="confirm-dialog" role="alertdialog" aria-modal="true">
           <h3 v-if="request.title">{{ request.title }}</h3>
           <p>{{ request.message }}</p>
           <div class="confirm-dialog__actions">

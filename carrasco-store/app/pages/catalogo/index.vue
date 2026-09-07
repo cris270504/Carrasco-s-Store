@@ -75,6 +75,7 @@ async function handleAddToCart(product: Product) {
                 class="catalog__view-btn"
                 :class="{ 'is-active': viewMode === 'grid' }"
                 aria-label="Vista de cuadrícula"
+                :aria-pressed="viewMode === 'grid'"
                 @click="viewMode = 'grid'"
               >
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -89,6 +90,7 @@ async function handleAddToCart(product: Product) {
                 class="catalog__view-btn"
                 :class="{ 'is-active': viewMode === 'list' }"
                 aria-label="Vista de lista"
+                :aria-pressed="viewMode === 'list'"
                 @click="viewMode = 'list'"
               >
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">

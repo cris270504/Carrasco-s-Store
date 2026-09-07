@@ -292,11 +292,11 @@ async function handleSubmit() {
               <span />
             </div>
             <div v-for="(variant, index) in variants" :key="variant.id ?? index" class="product-form__variant-row">
-              <input v-model="variant.name" type="text" placeholder="Capacidad">
-              <input v-model="variant.value" type="text" placeholder="1TB">
-              <input v-model="variant.priceModifier" type="number" step="0.01" placeholder="0.00">
-              <input v-model.number="variant.stock" type="number" min="0" step="1" placeholder="0">
-              <input v-model="variant.sku" type="text" placeholder="SKU">
+              <input v-model="variant.name" type="text" placeholder="Capacidad" aria-label="Nombre de la variante">
+              <input v-model="variant.value" type="text" placeholder="1TB" aria-label="Valor de la variante">
+              <input v-model="variant.priceModifier" type="number" step="0.01" placeholder="0.00" aria-label="Modificador de precio">
+              <input v-model.number="variant.stock" type="number" min="0" step="1" placeholder="0" aria-label="Stock de la variante">
+              <input v-model="variant.sku" type="text" placeholder="SKU" aria-label="SKU de la variante">
               <button type="button" class="icon-btn is-danger" aria-label="Quitar variante" @click="removeVariant(index)">
                 ×
               </button>
