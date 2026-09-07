@@ -3,21 +3,54 @@ definePageMeta({ layout: 'admin', middleware: 'admin' })
 
 type OrderStatus = 'pending_payment' | 'paid' | 'processing' | 'shipped' | 'completed' | 'cancelled' | 'refunded'
 
+interface ShippingAddress {
+  fullName: string
+  line1: string
+  line2: string | null
+  city: string
+  region: string | null
+  phone: string | null
+}
+
 interface AdminOrder {
   id: string
   customer: string
   items: string
+  hasPhysical: boolean
+  shippingAddress: ShippingAddress | null
   total: number
   paymentStatus: string | null
   status: OrderStatus
   date: string
 }
 
-const { data: fetchedOrders, pending } = await useFetch<AdminOrder[]>('/api/admin/orders', {
+function addressSummary(address: ShippingAddress) {
+  return `${address.fullName} — ${address.line1}, ${address.city}${address.phone ? ` · ${address.phone}` : ''}`
+}
+
+const toast = useToast()
+const { data: fetchedOrders, pending, refresh } = await useFetch<AdminOrder[]>('/api/admin/orders', {
   default: () => [],
 })
 
 const orders = computed(() => fetchedOrders.value ?? [])
+const updatingId = ref<string | null>(null)
+
+async function markAsShipped(order: AdminOrder) {
+  updatingId.value = order.id
+  try {
+    await $fetch(`/api/admin/orders/${order.id}`, { method: 'PATCH', body: { status: 'shipped' } })
+    await refresh()
+    toast.success(`Orden #${order.id.slice(0, 8).toUpperCase()} marcada como enviada.`)
+  }
+  catch (err) {
+    const fetchError = err as { data?: { statusMessage?: string } }
+    toast.error(fetchError?.data?.statusMessage || 'No se pudo actualizar la orden.')
+  }
+  finally {
+    updatingId.value = null
+  }
+}
 
 const statusLabels: Record<OrderStatus, string> = {
   pending_payment: 'Pendiente de pago',
@@ -95,7 +128,9 @@ const filterOptions = [
             <th>Total</th>
             <th>Pago (Mercado Pago)</th>
             <th>Estado</th>
+            <th>Envío</th>
             <th>Fecha</th>
+            <th />
           </tr>
         </thead>
         <tbody>
@@ -106,10 +141,27 @@ const filterOptions = [
             <td class="admin-table__mono">S/ {{ order.total.toFixed(2) }}</td>
             <td><span class="payment-badge" :class="`is-${order.paymentStatus}`">{{ paymentLabel(order.paymentStatus) }}</span></td>
             <td><span class="status-badge" :class="`is-${order.status}`">{{ statusLabels[order.status] }}</span></td>
+            <td class="orders-page__address">
+              <span v-if="order.shippingAddress" :title="addressSummary(order.shippingAddress)">
+                {{ order.shippingAddress.line1 }}, {{ order.shippingAddress.city }}
+              </span>
+              <span v-else-if="order.hasPhysical">—</span>
+            </td>
             <td class="orders-page__date">{{ formatDate(order.date) }}</td>
+            <td>
+              <button
+                v-if="order.hasPhysical && order.status === 'paid'"
+                type="button"
+                class="btn btn-outline orders-page__ship-btn"
+                :disabled="updatingId === order.id"
+                @click="markAsShipped(order)"
+              >
+                Marcar enviado
+              </button>
+            </td>
           </tr>
           <tr v-if="filtered.length === 0">
-            <td colspan="7" class="orders-page__empty">Sin órdenes para este filtro.</td>
+            <td colspan="9" class="orders-page__empty">Sin órdenes para este filtro.</td>
           </tr>
         </tbody>
       </table>
@@ -199,10 +251,20 @@ const filterOptions = [
   color: var(--color-ink-faint);
   font-size: 0.8rem;
 }
+.orders-page__address {
+  color: var(--color-ink-muted);
+  font-size: 0.8rem;
+  max-width: 180px;
+  white-space: normal;
+}
 .orders-page__empty {
   text-align: center;
   color: var(--color-ink-muted);
   padding: 2rem;
+}
+.orders-page__ship-btn {
+  font-size: 0.78rem;
+  padding: 0.4rem 0.75rem;
 }
 
 .payment-badge {

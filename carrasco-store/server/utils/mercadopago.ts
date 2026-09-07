@@ -23,6 +23,8 @@ export interface MpPreferencePayer {
   email: string
   name?: string
   surname?: string
+  phone?: { number: string }
+  address?: { street_name: string, zip_code?: string }
 }
 
 // Nombre del comercio en el resumen de tarjeta del comprador (reduce
@@ -51,6 +53,11 @@ export async function createMpPreference(params: {
       // de pagos legitimos sube.
       payer: params.payer,
       statement_descriptor: STATEMENT_DESCRIPTOR,
+      // Fuerza una respuesta final (aprobado/rechazado) en vez de dejar el
+      // pago en 'in_process'/'pending' por medios que lo permiten: el
+      // fulfillment de este negocio es automatico e instantaneo, no tiene
+      // sentido un estado intermedio prolongado.
+      binary_mode: true,
       external_reference: params.externalReference,
       back_urls: {
         success: params.successUrl,

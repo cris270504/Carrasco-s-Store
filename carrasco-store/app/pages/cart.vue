@@ -1,4 +1,14 @@
 <script setup lang="ts">
+interface Address {
+  id: string
+  fullName: string
+  line1: string
+  line2: string | null
+  city: string
+  region: string | null
+  phone: string | null
+}
+
 const { items, removeItem, setQuantity, subtotal } = useCart()
 const { settings, fetchSettings } = useStoreSettings()
 const user = useSupabaseUser()
@@ -18,6 +28,24 @@ const shipping = computed(() => calcShipping(hasPhysicalItem.value, settings.val
 const tax = computed(() => calcTax(subtotal.value))
 const total = computed(() => subtotal.value + shipping.value)
 
+// Direccion de envio: se pide solo cuando el carrito tiene un producto
+// fisico. Sin esto, una orden pagada no tenia adonde despacharse.
+const addressForm = reactive({ fullName: '', line1: '', line2: '', city: '', region: '', phone: '' })
+const savedAddressId = ref<string | null>(null)
+
+if (hasPhysicalItem.value && user.value) {
+  const existing = await $fetch<Address | null>('/api/addresses').catch(() => null)
+  if (existing) {
+    savedAddressId.value = existing.id
+    addressForm.fullName = existing.fullName
+    addressForm.line1 = existing.line1
+    addressForm.line2 = existing.line2 ?? ''
+    addressForm.city = existing.city
+    addressForm.region = existing.region ?? ''
+    addressForm.phone = existing.phone ?? ''
+  }
+}
+
 const checkingOut = ref(false)
 const checkoutError = ref('')
 
@@ -28,10 +56,23 @@ async function handleCheckout() {
   }
 
   checkoutError.value = ''
+
+  if (hasPhysicalItem.value && (!addressForm.fullName.trim() || !addressForm.line1.trim() || !addressForm.city.trim())) {
+    checkoutError.value = 'Completa nombre, dirección y ciudad para el envío.'
+    return
+  }
+
   checkingOut.value = true
   try {
+    let addressId = savedAddressId.value
+    if (hasPhysicalItem.value) {
+      const address = await $fetch<Address>('/api/addresses', { method: 'POST', body: addressForm })
+      addressId = address.id
+    }
+
     const { initPoint } = await $fetch<{ orderId: string, initPoint: string }>('/api/checkout', {
       method: 'POST',
+      body: hasPhysicalItem.value ? { addressId } : undefined,
     })
     await navigateTo(initPoint, { external: true })
   }
@@ -62,10 +103,11 @@ async function handleCheckout() {
     </div>
 
     <div v-else class="cart-layout">
+      <div class="cart-main">
       <ul class="cart-lines">
         <li v-for="line in items" :key="line.id" class="cart-line">
           <NuxtLink :to="`/producto/${line.slug}`" class="cart-line__image-link">
-            <img v-if="line.image" :src="line.image" :alt="line.name" loading="lazy">
+            <NuxtImg v-if="line.image" :src="line.image" :alt="line.name" loading="lazy" width="72" height="72" fit="cover" />
             <div v-else class="cart-line__image-placeholder" :class="`is-${line.itemType}`" />
           </NuxtLink>
 
@@ -109,6 +151,39 @@ async function handleCheckout() {
           </button>
         </li>
       </ul>
+
+      <form v-if="hasPhysicalItem" class="address-card" @submit.prevent>
+        <h2>Dirección de envío</h2>
+        <div class="address-card__row">
+          <div class="field">
+            <label for="addr-name">Nombre completo</label>
+            <input id="addr-name" v-model="addressForm.fullName" type="text" required autocomplete="name">
+          </div>
+          <div class="field">
+            <label for="addr-phone">Teléfono</label>
+            <input id="addr-phone" v-model="addressForm.phone" type="tel" autocomplete="tel">
+          </div>
+        </div>
+        <div class="field">
+          <label for="addr-line1">Dirección</label>
+          <input id="addr-line1" v-model="addressForm.line1" type="text" required autocomplete="address-line1" placeholder="Av./Jr./Calle, número">
+        </div>
+        <div class="field">
+          <label for="addr-line2">Referencia (opcional)</label>
+          <input id="addr-line2" v-model="addressForm.line2" type="text" autocomplete="address-line2">
+        </div>
+        <div class="address-card__row">
+          <div class="field">
+            <label for="addr-city">Ciudad</label>
+            <input id="addr-city" v-model="addressForm.city" type="text" required autocomplete="address-level2">
+          </div>
+          <div class="field">
+            <label for="addr-region">Región (opcional)</label>
+            <input id="addr-region" v-model="addressForm.region" type="text" autocomplete="address-level1">
+          </div>
+        </div>
+      </form>
+      </div>
 
       <aside class="cart-summary">
         <h2>Resumen</h2>
@@ -203,6 +278,12 @@ async function handleCheckout() {
   align-items: start;
 }
 
+.cart-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-width: 0;
+}
 .cart-lines {
   list-style: none;
   margin: 0;
@@ -210,6 +291,54 @@ async function handleCheckout() {
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
+}
+
+.address-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.address-card h2 {
+  font-size: 1rem;
+  margin-bottom: 0.15rem;
+}
+.address-card__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+.address-card .field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.address-card label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-ink-muted);
+}
+.address-card input {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-control);
+  background: var(--color-bg);
+  color: var(--color-ink);
+}
+.address-card input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  background: var(--color-surface);
+}
+@media (max-width: 480px) {
+  .address-card__row {
+    grid-template-columns: 1fr;
+  }
 }
 .cart-line {
   display: grid;

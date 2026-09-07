@@ -1,6 +1,6 @@
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { serverSupabaseUser } from '#supabase/server'
-import { orderItems, orders, productVariants, products } from '../../database/schema'
+import { addresses, orderItems, orders } from '../../database/schema'
 
 export default defineEventHandler(async (event) => {
   enforceRateLimit(event, { key: 'checkout', limit: 5, windowMs: 60_000 })
@@ -21,26 +21,50 @@ export default defineEventHandler(async (event) => {
   // confia en el snapshot guardado en cart_items al agregarlo): si el admin
   // cambio el precio despues de que el cliente lo agrego al carrito, se cobra
   // el precio vigente, igual que ya se hace con el stock.
+  // getProductForCart ya trae el stock vigente junto con el precio: se
+  // reutiliza aca en vez de repetir una query de stock por item (N+1).
   const pricedItems = await Promise.all(cartData.items.map(async (item) => {
     const found = await getProductForCart(item.productId, item.variantId)
     if (!found) {
       throw createError({ statusCode: 400, statusMessage: `"${item.name}" ya no está disponible` })
     }
-    return { ...item, unitPrice: found.unitPrice, description: found.product.description }
+    return {
+      ...item,
+      unitPrice: found.unitPrice,
+      description: found.product.description,
+      stock: found.stock,
+      requiresShipping: found.product.requiresShipping,
+    }
   }))
 
   for (const item of pricedItems) {
     if (item.itemType !== 'physical') continue
 
-    const available = item.variantId
-      ? (await db.query.productVariants.findFirst({ where: eq(productVariants.id, item.variantId) }))?.stock
-      : (await db.query.products.findFirst({ where: eq(products.id, item.productId) }))?.stock
-
-    if ((available ?? 0) < item.quantity) {
+    if (item.stock < item.quantity) {
       throw createError({
         statusCode: 400,
-        statusMessage: `Stock insuficiente para "${item.name}" (disponible: ${available ?? 0})`,
+        statusMessage: `Stock insuficiente para "${item.name}" (disponible: ${item.stock})`,
       })
+    }
+  }
+
+  // Sin direccion no hay a donde despachar un producto fisico: se exige antes
+  // de generar la preferencia de pago, no despues de cobrar.
+  const needsAddress = pricedItems.some(i => i.itemType === 'physical' && i.requiresShipping)
+  let shippingAddress: typeof addresses.$inferSelect | undefined
+
+  if (needsAddress) {
+    const body = await readBody(event).catch(() => null)
+    const addressId = body?.addressId
+    if (!addressId || typeof addressId !== 'string') {
+      throw createError({ statusCode: 400, statusMessage: 'Selecciona una dirección de envío' })
+    }
+
+    shippingAddress = await db.query.addresses.findFirst({
+      where: and(eq(addresses.id, addressId), eq(addresses.userId, user.sub)),
+    })
+    if (!shippingAddress) {
+      throw createError({ statusCode: 400, statusMessage: 'Dirección de envío no válida' })
     }
   }
 
@@ -60,6 +84,7 @@ export default defineEventHandler(async (event) => {
     tax: String(tax),
     shippingCost: String(shippingCost),
     total: String(total),
+    shippingAddressId: shippingAddress?.id,
   }).returning()
 
   await db.insert(orderItems).values(
@@ -93,6 +118,8 @@ export default defineEventHandler(async (event) => {
         email: user.email!,
         name: payerName,
         surname: payerSurnameParts.length > 0 ? payerSurnameParts.join(' ') : undefined,
+        phone: shippingAddress?.phone ? { number: shippingAddress.phone } : undefined,
+        address: shippingAddress ? { street_name: shippingAddress.line1 } : undefined,
       },
       externalReference: order!.id,
       successUrl: `${origin}/checkout/success`,
