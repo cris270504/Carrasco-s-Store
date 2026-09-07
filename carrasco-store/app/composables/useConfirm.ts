@@ -20,6 +20,11 @@ export function useConfirm() {
   const request = useConfirmState()
 
   return function confirm(options: ConfirmOptions): Promise<boolean> {
+    // Si ya habia una solicitud pendiente (se abrio un segundo dialogo antes
+    // de responder el primero), se resuelve como cancelada en vez de perderla:
+    // sin esto, el primer `await confirm()` quedaba colgado para siempre.
+    request.value?.resolve(false)
+
     return new Promise((resolve) => {
       request.value = { ...options, resolve }
     })

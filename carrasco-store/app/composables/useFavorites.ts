@@ -11,6 +11,11 @@ export interface FavoriteProduct {
 export function useFavorites() {
   const favorites = useState<FavoriteProduct[]>('favorites', () => [])
   const loading = useState('favorites-loading', () => false)
+  // Guarda de reentrada compartida por productId: si dos componentes (ej. una
+  // tarjeta y la ficha del mismo producto) disparan toggleFavorite casi a la
+  // vez, la segunda llamada no debe repetir el POST/DELETE mientras la
+  // primera sigue en vuelo (check-then-act no atomico contra el servidor).
+  const pending = useState<Set<string>>('favorites-pending', () => new Set())
 
   async function fetchFavorites() {
     const user = useSupabaseUser()
@@ -44,16 +49,24 @@ export function useFavorites() {
       return
     }
 
-    if (isFavorite(productId)) {
-      await $fetch(`/api/favorites/${productId}`, { method: 'DELETE' })
-      favorites.value = favorites.value.filter(f => f.productId !== productId)
+    if (pending.value.has(productId)) return
+    pending.value.add(productId)
+
+    try {
+      if (isFavorite(productId)) {
+        await $fetch(`/api/favorites/${productId}`, { method: 'DELETE' })
+        favorites.value = favorites.value.filter(f => f.productId !== productId)
+      }
+      else {
+        const created = await $fetch<FavoriteProduct>('/api/favorites', {
+          method: 'POST',
+          body: { productId },
+        })
+        favorites.value = [created, ...favorites.value]
+      }
     }
-    else {
-      const created = await $fetch<FavoriteProduct>('/api/favorites', {
-        method: 'POST',
-        body: { productId },
-      })
-      favorites.value = [created, ...favorites.value]
+    finally {
+      pending.value.delete(productId)
     }
   }
 

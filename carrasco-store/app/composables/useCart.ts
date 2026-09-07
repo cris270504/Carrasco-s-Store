@@ -28,11 +28,25 @@ export interface AddCartItemPayload {
 export function useCart() {
   const cart = useState<CartResponse | null>('cart', () => null)
   const loading = useState('cart-loading', () => false)
+  // Token de secuencia: si dos mutaciones se disparan casi juntas (ej. sumar
+  // cantidad de dos lineas rapido) y sus respuestas llegan en orden distinto
+  // al de envio, la mas vieja ya no debe pisar el estado que dejo la mas
+  // nueva ("ultima respuesta gana" segun orden de red, no de request).
+  const requestSeq = useState('cart-request-seq', () => 0)
+
+  async function applyRequest<T>(fn: () => Promise<T>): Promise<T> {
+    const seq = ++requestSeq.value
+    const result = await fn()
+    if (seq === requestSeq.value) {
+      cart.value = result as unknown as CartResponse
+    }
+    return result
+  }
 
   async function fetchCart() {
     loading.value = true
     try {
-      cart.value = await $fetch<CartResponse>('/api/cart')
+      await applyRequest(() => $fetch<CartResponse>('/api/cart'))
     }
     catch {
       // sin backend disponible, el carrito queda vacio en vez de romper la UI
@@ -43,15 +57,15 @@ export function useCart() {
   }
 
   async function addItem(payload: AddCartItemPayload) {
-    cart.value = await $fetch<CartResponse>('/api/cart/items', { method: 'POST', body: payload })
+    await applyRequest(() => $fetch<CartResponse>('/api/cart/items', { method: 'POST', body: payload }))
   }
 
   async function setQuantity(itemId: string, quantity: number) {
-    cart.value = await $fetch<CartResponse>(`/api/cart/items/${itemId}`, { method: 'PATCH', body: { quantity } })
+    await applyRequest(() => $fetch<CartResponse>(`/api/cart/items/${itemId}`, { method: 'PATCH', body: { quantity } }))
   }
 
   async function removeItem(itemId: string) {
-    cart.value = await $fetch<CartResponse>(`/api/cart/items/${itemId}`, { method: 'DELETE' })
+    await applyRequest(() => $fetch<CartResponse>(`/api/cart/items/${itemId}`, { method: 'DELETE' }))
   }
 
   const items = computed(() => cart.value?.items ?? [])

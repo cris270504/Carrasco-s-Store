@@ -7,7 +7,7 @@ const { isFavorite, toggleFavorite } = useFavorites()
 const togglingFavorite = ref(false)
 
 async function handleToggleFavorite() {
-  if (!product.value) return
+  if (!product.value || togglingFavorite.value) return
   togglingFavorite.value = true
   try {
     await toggleFavorite(product.value.id)
@@ -17,6 +17,7 @@ async function handleToggleFavorite() {
   }
 }
 
+const toast = useToast()
 const { data: product, error } = await useFetch<Product>(`/api/products/${route.params.slug}`)
 
 if (error.value) {
@@ -56,7 +57,7 @@ const adding = ref(false)
 const addedMsg = ref(false)
 
 async function handleAdd() {
-  if (!product.value) return
+  if (!product.value || isOutOfStock.value || adding.value) return
   adding.value = true
   try {
     await addItem({
@@ -66,6 +67,10 @@ async function handleAdd() {
     })
     addedMsg.value = true
     setTimeout(() => { addedMsg.value = false }, 2000)
+  }
+  catch (err) {
+    const fetchError = err as { data?: { statusMessage?: string } }
+    toast.error(fetchError?.data?.statusMessage || 'No se pudo agregar al carrito. Intenta de nuevo.')
   }
   finally {
     adding.value = false
@@ -85,7 +90,7 @@ async function handleAdd() {
 
     <div class="product-layout">
       <div class="product-image">
-        <img v-if="product.images?.[0]" :src="product.images[0]" :alt="product.name">
+        <NuxtImg v-if="product.images?.[0]" :src="product.images[0]" :alt="product.name" width="600" height="600" fit="cover" />
         <div v-else class="product-image__placeholder" :class="`is-${product.type}`" />
       </div>
 
@@ -144,6 +149,8 @@ async function handleAdd() {
             type="button"
             class="btn btn-outline product-info__favorite"
             :class="{ 'is-active': isFavorite(product.id) }"
+            :aria-label="isFavorite(product.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'"
+            :aria-pressed="isFavorite(product.id)"
             :disabled="togglingFavorite"
             @click="handleToggleFavorite"
           >

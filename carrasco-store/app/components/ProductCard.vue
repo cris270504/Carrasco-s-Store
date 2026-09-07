@@ -11,6 +11,7 @@ const { isFavorite, toggleFavorite } = useFavorites()
 const togglingFavorite = ref(false)
 
 async function handleToggleFavorite() {
+  if (togglingFavorite.value) return
   togglingFavorite.value = true
   try {
     await toggleFavorite(props.product.id)
@@ -60,12 +61,15 @@ const isOutOfStock = computed(() => {
 <template>
   <article class="product-card" :class="`product-card--${view}`">
     <NuxtLink :to="`/producto/${product.slug}`" class="product-card__image-link">
-      <img
+      <NuxtImg
         v-if="product.images?.[0]"
         :src="product.images[0]"
         :alt="product.name"
         loading="lazy"
-      >
+        width="400"
+        height="300"
+        fit="cover"
+      />
       <div v-else class="product-card__image-placeholder" :class="typeMeta.className" />
     </NuxtLink>
 
