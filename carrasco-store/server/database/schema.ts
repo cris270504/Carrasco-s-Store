@@ -78,7 +78,12 @@ export const digitalLicenses = pgTable('digital_licenses', {
   status: licenseStatusEnum('status').notNull().default('available'),
   orderItemId: uuid('order_item_id'),
   deliveredAt: timestamp('delivered_at'),
-}).enableRLS()
+}, (table) => ({
+  // Usado por el SELECT...FOR UPDATE SKIP LOCKED de fulfillDigital en cada
+  // compra digital (server/utils/fulfillment.ts): sin este indice compuesto,
+  // Postgres escanea todas las licencias del producto en cada intento de reclamo.
+  productStatusIdx: index('digital_licenses_product_status_idx').on(table.productId, table.status),
+})).enableRLS()
  
 // Detalle de servicios técnicos (agendamiento)
 export const serviceDetails = pgTable('service_details', {
@@ -103,8 +108,10 @@ export const addresses = pgTable('addresses', {
   country: varchar('country', { length: 2 }).notNull().default('PE'),
   phone: varchar('phone', { length: 30 }),
   isDefault: boolean('is_default').default(false),
-}).enableRLS()
- 
+}, (table) => ({
+  userIdx: index('addresses_user_idx').on(table.userId),
+})).enableRLS()
+
 // ============================================================
 // CARRITO
 // ============================================================
@@ -114,8 +121,13 @@ export const carts = pgTable('carts', {
   sessionId: varchar('session_id', { length: 255 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}).enableRLS()
- 
+}, (table) => ({
+  // getOrCreateCart (server/utils/cart.ts) filtra por uno u otro en
+  // practicamente cada request que toca el carrito.
+  userIdx: index('carts_user_idx').on(table.userId),
+  sessionIdx: index('carts_session_idx').on(table.sessionId),
+})).enableRLS()
+
 export const cartItems = pgTable('cart_items', {
   id: uuid('id').defaultRandom().primaryKey(),
   cartId: uuid('cart_id').notNull().references(() => carts.id, { onDelete: 'cascade' }),
@@ -127,7 +139,13 @@ export const cartItems = pgTable('cart_items', {
   // solo relevante si itemType = 'service'
   preferredScheduleAt: timestamp('preferred_schedule_at'),
   preferredModality: bookingModalityEnum('preferred_modality'),
-}).enableRLS()
+}, (table) => ({
+  // getCartResponse/findCartItem (cada GET/POST/PATCH de carrito) y la
+  // limpieza al eliminar un producto (admin/products/[id].delete.ts) filtran
+  // por estas columnas.
+  cartIdx: index('cart_items_cart_idx').on(table.cartId),
+  productIdx: index('cart_items_product_idx').on(table.productId),
+})).enableRLS()
  
 // ============================================================
 // ÓRDENES
@@ -158,7 +176,13 @@ export const orderItems = pgTable('order_items', {
   quantity: integer('quantity').notNull().default(1),
   unitPrice: decimal('unit_price', { precision: 10, scale: 2 }).notNull(),
   digitalLicenseId: uuid('digital_license_id').references(() => digitalLicenses.id),
-}).enableRLS()
+}, (table) => ({
+  // fulfillOrder busca por orderId en cada webhook aprobado; productHasSales
+  // (server/utils/productSales.ts) busca por productId en cada carga del
+  // listado admin y cada intento de eliminar un producto.
+  orderIdx: index('order_items_order_idx').on(table.orderId),
+  productIdx: index('order_items_product_idx').on(table.productId),
+})).enableRLS()
  
 export const serviceBookings = pgTable('service_bookings', {
   id: uuid('id').defaultRandom().primaryKey(),

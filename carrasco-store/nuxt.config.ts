@@ -27,6 +27,10 @@ export default defineNuxtConfig({
   },
   image: {
     format: ['webp'],
+    // Bucket publico de Supabase Storage donde vive product-images (ver
+    // server/api/admin/upload.post.ts): sin esto, NuxtImg no puede
+    // transformar/optimizar imagenes servidas desde ese dominio externo.
+    domains: ['vygocxhtbghtwewyrymq.supabase.co'],
   },
   site: {
     // TODO: reemplazar por el dominio real de produccion (o definir NUXT_PUBLIC_SITE_URL)
