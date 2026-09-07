@@ -14,7 +14,9 @@ useSeoMeta({
       <slot />
     </main>
     <AppFooter />
-    <WelcomeModal />
+    <ClientOnly>
+      <WelcomeModal />
+    </ClientOnly>
   </div>
 </template>
 
