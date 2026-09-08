@@ -14,12 +14,17 @@ if (user.value) {
   await navigateTo('/dashboard')
 }
 
+// Validacion en vivo: antes solo se sabia de un typo en la confirmacion de
+// contraseña despues de enviar todo el formulario.
+const passwordTooShort = computed(() => password.value.length > 0 && password.value.length < 6)
+const passwordMismatch = computed(() => confirmPassword.value.length > 0 && confirmPassword.value !== password.value)
+
 async function handleRegister() {
   errorMsg.value = ''
   successMsg.value = ''
 
-  if (password.value !== confirmPassword.value) {
-    errorMsg.value = 'Las contraseñas no coinciden.'
+  if (passwordTooShort.value || passwordMismatch.value) {
+    errorMsg.value = 'Revisa la contraseña antes de continuar.'
     return
   }
 
@@ -76,7 +81,9 @@ async function handleRegister() {
         minlength="6"
         autocomplete="new-password"
         placeholder="Mínimo 6 caracteres"
+        :class="{ 'is-invalid': passwordTooShort }"
       >
+      <p v-if="passwordTooShort" class="field__error">Debe tener al menos 6 caracteres.</p>
 
       <label for="confirmPassword">Confirmar contraseña</label>
       <input
@@ -87,7 +94,9 @@ async function handleRegister() {
         minlength="6"
         autocomplete="new-password"
         placeholder="Repite tu contraseña"
+        :class="{ 'is-invalid': passwordMismatch }"
       >
+      <p v-if="passwordMismatch" class="field__error">Las contraseñas no coinciden.</p>
 
       <p v-if="errorMsg" class="auth-card__error" role="alert">{{ errorMsg }}</p>
       <p v-if="successMsg" class="auth-card__success" role="status">{{ successMsg }}</p>
@@ -159,6 +168,14 @@ async function handleRegister() {
   outline: none;
   border-color: var(--color-accent);
   background: var(--color-surface);
+}
+.auth-card input.is-invalid {
+  border-color: var(--color-danger);
+}
+.field__error {
+  margin: -0.3rem 0 0;
+  font-size: 0.76rem;
+  color: var(--color-danger);
 }
 .auth-card__submit {
   margin-top: 0.75rem;

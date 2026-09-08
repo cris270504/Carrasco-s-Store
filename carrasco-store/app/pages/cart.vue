@@ -46,8 +46,27 @@ if (hasPhysicalItem.value && user.value) {
   }
 }
 
+// Indicador de progreso puramente orientativo (todo ocurre en esta misma
+// pagina, no hay rutas separadas por paso): "Envio" solo aplica si hay un
+// item fisico, y "Pago" es siempre el ultimo paso, pendiente hasta el click final.
+const steps = computed(() => hasPhysicalItem.value ? ['Carrito', 'Envío', 'Pago'] : ['Carrito', 'Pago'])
+
 const checkingOut = ref(false)
 const checkoutError = ref('')
+const addressErrors = reactive({ fullName: '', line1: '', city: '' })
+
+function validateAddress() {
+  addressErrors.fullName = addressForm.fullName.trim() ? '' : 'Ingresa tu nombre completo.'
+  addressErrors.line1 = addressForm.line1.trim() ? '' : 'Ingresa la dirección.'
+  addressErrors.city = addressForm.city.trim() ? '' : 'Ingresa la ciudad.'
+  return !addressErrors.fullName && !addressErrors.line1 && !addressErrors.city
+}
+
+// Una vez que el usuario intento pagar y vio los errores, corregir un campo
+// limpia su error al instante en vez de esperar a un segundo intento de submit.
+watch(() => addressForm.fullName, (v) => { if (v.trim()) addressErrors.fullName = '' })
+watch(() => addressForm.line1, (v) => { if (v.trim()) addressErrors.line1 = '' })
+watch(() => addressForm.city, (v) => { if (v.trim()) addressErrors.city = '' })
 
 async function handleCheckout() {
   if (!user.value) {
@@ -57,8 +76,8 @@ async function handleCheckout() {
 
   checkoutError.value = ''
 
-  if (hasPhysicalItem.value && (!addressForm.fullName.trim() || !addressForm.line1.trim() || !addressForm.city.trim())) {
-    checkoutError.value = 'Completa nombre, dirección y ciudad para el envío.'
+  if (hasPhysicalItem.value && !validateAddress()) {
+    checkoutError.value = 'Revisa los campos marcados para continuar.'
     return
   }
 
@@ -95,6 +114,13 @@ async function handleCheckout() {
     </nav>
 
     <h1 class="cart-page__title">Tu carrito</h1>
+
+    <ol v-if="items.length > 0" class="checkout-steps">
+      <li v-for="(step, i) in steps" :key="step" class="checkout-steps__item" :class="{ 'is-current': i === steps.length - 1 }">
+        <span class="checkout-steps__dot">{{ i === steps.length - 1 ? i + 1 : '✓' }}</span>
+        {{ step }}
+      </li>
+    </ol>
 
     <div v-if="items.length === 0" class="cart-empty">
       <p class="cart-empty__title">Tu carrito está vacío</p>
@@ -159,7 +185,11 @@ async function handleCheckout() {
         <div class="address-card__row">
           <div class="field">
             <label for="addr-name">Nombre completo</label>
-            <input id="addr-name" v-model="addressForm.fullName" type="text" required autocomplete="name">
+            <input
+              id="addr-name" v-model="addressForm.fullName" type="text" required autocomplete="name"
+              :class="{ 'is-invalid': addressErrors.fullName }"
+            >
+            <p v-if="addressErrors.fullName" class="field__error">{{ addressErrors.fullName }}</p>
           </div>
           <div class="field">
             <label for="addr-phone">Teléfono</label>
@@ -168,7 +198,11 @@ async function handleCheckout() {
         </div>
         <div class="field">
           <label for="addr-line1">Dirección</label>
-          <input id="addr-line1" v-model="addressForm.line1" type="text" required autocomplete="address-line1" placeholder="Av./Jr./Calle, número">
+          <input
+            id="addr-line1" v-model="addressForm.line1" type="text" required autocomplete="address-line1"
+            placeholder="Av./Jr./Calle, número" :class="{ 'is-invalid': addressErrors.line1 }"
+          >
+          <p v-if="addressErrors.line1" class="field__error">{{ addressErrors.line1 }}</p>
         </div>
         <div class="field">
           <label for="addr-line2">Referencia (opcional)</label>
@@ -177,7 +211,11 @@ async function handleCheckout() {
         <div class="address-card__row">
           <div class="field">
             <label for="addr-city">Ciudad</label>
-            <input id="addr-city" v-model="addressForm.city" type="text" required autocomplete="address-level2">
+            <input
+              id="addr-city" v-model="addressForm.city" type="text" required autocomplete="address-level2"
+              :class="{ 'is-invalid': addressErrors.city }"
+            >
+            <p v-if="addressErrors.city" class="field__error">{{ addressErrors.city }}</p>
           </div>
           <div class="field">
             <label for="addr-region">Región (opcional)</label>
@@ -252,7 +290,50 @@ async function handleCheckout() {
 }
 .cart-page__title {
   font-size: 1.6rem;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.checkout-steps {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0 0 1.75rem;
+  padding: 0;
+  font-size: 0.85rem;
+  color: var(--color-ink-faint);
+}
+.checkout-steps__item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.checkout-steps__item:not(:last-child)::after {
+  content: '';
+  width: 24px;
+  height: 1px;
+  background: var(--color-border-strong);
+  margin-left: 0.6rem;
+}
+.checkout-steps__dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: var(--color-physical-tint);
+  color: var(--color-physical-ink);
+}
+.checkout-steps__item.is-current {
+  color: var(--color-ink);
+  font-weight: 600;
+}
+.checkout-steps__item.is-current .checkout-steps__dot {
+  background: var(--color-accent);
+  color: #fff;
 }
 
 .cart-empty {
@@ -336,6 +417,14 @@ async function handleCheckout() {
   outline: none;
   border-color: var(--color-accent);
   background: var(--color-surface);
+}
+.address-card input.is-invalid {
+  border-color: var(--color-danger);
+}
+.field__error {
+  margin: 0;
+  font-size: 0.76rem;
+  color: var(--color-danger);
 }
 @media (max-width: 480px) {
   .address-card__row {
@@ -524,5 +613,19 @@ async function handleCheckout() {
   .cart-line__qty { grid-area: qty; }
   .cart-line__price { grid-area: price; }
   .cart-line__remove { grid-area: remove; justify-self: end; }
+
+  /* El CTA de pago quedaba enterrado al final del scroll (items + direccion +
+     resumen completo); se fija el resumen abajo para que siempre este a mano. */
+  .cart-summary {
+    position: sticky;
+    top: auto;
+    bottom: 0;
+    margin: 0 -1.5rem;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.12);
+  }
 }
 </style>
