@@ -80,7 +80,7 @@ async function handleSubmit() {
 
       <p v-if="errorMsg" class="auth-card__error" role="alert">{{ errorMsg }}</p>
 
-      <button type="submit" class="btn btn-primary auth-card__submit" :disabled="loading">
+      <button type="submit" class="btn btn-primary auth-card__submit" :class="{ 'btn--loading': loading }" :disabled="loading" :aria-busy="loading">
         {{ loading ? 'Guardando…' : 'Guardar contraseña' }}
       </button>
     </form>

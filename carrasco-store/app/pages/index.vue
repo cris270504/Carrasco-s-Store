@@ -2,6 +2,7 @@
 import type { Product } from '~/types/product'
 
 const { addItem } = useCart()
+const toast = useToast()
 
 const { data: featuredProducts } = await useFetch<Product[]>('/api/products', {
   query: { limit: 4 },
@@ -14,9 +15,11 @@ async function handleAddToCart(product: Product) {
       variantId: null,
       preferredModality: product.serviceDetail?.defaultModality ?? null,
     })
+    toast.success(`"${product.name}" se agregó al carrito.`)
   }
-  catch {
-    // TODO(Parte 4 - Carrito): feedback visual de error al agregar
+  catch (err) {
+    const fetchError = err as { data?: { statusMessage?: string } }
+    toast.error(fetchError?.data?.statusMessage || 'No se pudo agregar al carrito.')
   }
 }
 

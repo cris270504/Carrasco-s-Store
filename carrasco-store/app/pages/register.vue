@@ -92,7 +92,7 @@ async function handleRegister() {
       <p v-if="errorMsg" class="auth-card__error" role="alert">{{ errorMsg }}</p>
       <p v-if="successMsg" class="auth-card__success" role="status">{{ successMsg }}</p>
 
-      <button type="submit" class="btn btn-primary auth-card__submit" :disabled="loading">
+      <button type="submit" class="btn btn-primary auth-card__submit" :class="{ 'btn--loading': loading }" :disabled="loading" :aria-busy="loading">
         {{ loading ? 'Creando cuenta…' : 'Registrarme' }}
       </button>
 

@@ -3,8 +3,9 @@ import type { Product } from '~/types/product'
 
 const { filters, resetFilters } = useProductFilters()
 const { addItem } = useCart()
+const toast = useToast()
 
-const { data: products, pending, error } = await useFetch<Product[]>('/api/products', {
+const { data: products, pending, error, refresh } = await useFetch<Product[]>('/api/products', {
   query: filters,
 })
 
@@ -36,9 +37,11 @@ async function handleAddToCart(product: Product) {
       variantId: null,
       preferredModality: product.serviceDetail?.defaultModality ?? null,
     })
+    toast.success(`"${product.name}" se agregó al carrito.`)
   }
-  catch {
-    // TODO(Parte 4 - Carrito): feedback visual de error al agregar
+  catch (err) {
+    const fetchError = err as { data?: { statusMessage?: string } }
+    toast.error(fetchError?.data?.statusMessage || 'No se pudo agregar al carrito.')
   }
 }
 </script>
@@ -123,7 +126,8 @@ async function handleAddToCart(product: Product) {
         </div>
 
         <div v-else-if="error" class="catalog__state">
-          <p>No pudimos cargar el catálogo. Intenta recargar la página.</p>
+          <p>No pudimos cargar el catálogo.</p>
+          <button type="button" class="btn btn-outline" @click="refresh()">Reintentar</button>
         </div>
 
         <div v-else-if="sortedProducts.length === 0" class="catalog__state">
