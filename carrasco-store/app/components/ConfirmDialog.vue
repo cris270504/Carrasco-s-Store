@@ -23,7 +23,20 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   <Teleport to="body">
     <Transition name="confirm-fade">
       <div v-if="request" class="confirm-overlay" @click.self="respond(false)">
-        <div ref="dialogRef" class="confirm-dialog" role="alertdialog" aria-modal="true">
+        <div
+          ref="dialogRef"
+          class="confirm-dialog"
+          :class="{ 'is-danger': request.variant === 'danger' }"
+          role="alertdialog"
+          aria-modal="true"
+        >
+          <span v-if="request.variant === 'danger'" class="confirm-dialog__icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M10 2 1 17h18L10 2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+              <path d="M10 8v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+              <circle cx="10" cy="14.5" r="0.9" fill="currentColor" />
+            </svg>
+          </span>
           <h3 v-if="request.title">{{ request.title }}</h3>
           <p>{{ request.message }}</p>
           <div class="confirm-dialog__actions">
@@ -61,9 +74,24 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   max-width: 380px;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
+  border-top: 3px solid var(--color-border-strong);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-card-hover);
   padding: 1.25rem;
+}
+.confirm-dialog.is-danger {
+  border-top-color: var(--color-danger);
+}
+.confirm-dialog__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-danger-tint);
+  color: var(--color-danger);
+  margin-bottom: 0.7rem;
 }
 .confirm-dialog h3 {
   font-size: 1.05rem;

@@ -36,10 +36,15 @@ const icons = { info: 'ℹ', success: '✓', warning: '!', error: '✕' } as con
   padding: 0.75rem 0.85rem;
   border-radius: var(--radius-control);
   border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-border);
   background: var(--color-surface);
   box-shadow: var(--shadow-card-hover);
   font-size: 0.85rem;
 }
+.toast.is-info { border-left-color: var(--color-accent); }
+.toast.is-success { border-left-color: var(--color-success); }
+.toast.is-warning { border-left-color: var(--color-service); }
+.toast.is-error { border-left-color: var(--color-danger); }
 .toast p {
   margin: 0;
   flex: 1;

@@ -369,6 +369,10 @@ const maxSale = computed(() => Math.max(1, ...(metrics.value?.weeklySales ?? [])
   background: var(--color-digital-tint);
   color: var(--color-digital-ink);
 }
+.status-badge.is-pending_payment {
+  background: var(--color-service-tint);
+  color: var(--color-service-ink);
+}
 .status-badge.is-cancelled,
 .status-badge.is-refunded {
   background: var(--color-danger-tint);

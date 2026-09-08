@@ -246,6 +246,14 @@ async function handleLogout() {
   background: var(--color-physical-tint);
   color: var(--color-physical-ink);
 }
+.order-row__status.is-shipped {
+  background: var(--color-digital-tint);
+  color: var(--color-digital-ink);
+}
+.order-row__status.is-pending_payment {
+  background: var(--color-service-tint);
+  color: var(--color-service-ink);
+}
 .order-row__status.is-cancelled,
 .order-row__status.is-refunded {
   background: var(--color-danger-tint);

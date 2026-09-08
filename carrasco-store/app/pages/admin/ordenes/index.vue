@@ -29,6 +29,7 @@ function addressSummary(address: ShippingAddress) {
 }
 
 const toast = useToast()
+const confirmDialog = useConfirm()
 const { data: fetchedOrders, pending, refresh } = await useFetch<AdminOrder[]>('/api/admin/orders', {
   default: () => [],
 })
@@ -37,6 +38,13 @@ const orders = computed(() => fetchedOrders.value ?? [])
 const updatingId = ref<string | null>(null)
 
 async function markAsShipped(order: AdminOrder) {
+  const confirmed = await confirmDialog({
+    title: 'Marcar como enviado',
+    message: `¿Confirmas que el pedido #${order.id.slice(0, 8).toUpperCase()} ya fue despachado?`,
+    confirmLabel: 'Marcar enviado',
+  })
+  if (!confirmed) return
+
   updatingId.value = order.id
   try {
     await $fetch(`/api/admin/orders/${order.id}`, { method: 'PATCH', body: { status: 'shipped' } })
@@ -295,6 +303,10 @@ const filterOptions = [
 .status-badge.is-shipped {
   background: var(--color-digital-tint);
   color: var(--color-digital-ink);
+}
+.status-badge.is-pending_payment {
+  background: var(--color-service-tint);
+  color: var(--color-service-ink);
 }
 .status-badge.is-cancelled,
 .status-badge.is-refunded {
