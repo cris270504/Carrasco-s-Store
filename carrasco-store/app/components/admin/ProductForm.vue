@@ -341,8 +341,14 @@ async function handleSubmit() {
 
       <div class="product-form__actions">
         <NuxtLink to="/admin/productos" class="btn btn-ghost">Cancelar</NuxtLink>
-        <button type="submit" class="btn btn-primary" :disabled="submitting">
-          {{ submitting ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Crear producto' }}
+        <button
+          type="submit"
+          class="btn btn-primary"
+          :class="{ 'btn--loading': submitting }"
+          :disabled="submitting || uploadingImage"
+          :aria-busy="submitting"
+        >
+          {{ uploadingImage ? 'Esperando imagen…' : submitting ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Crear producto' }}
         </button>
       </div>
     </template>

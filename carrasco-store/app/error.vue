@@ -14,11 +14,15 @@ useSeoMeta({
 function handleBackHome() {
   clearError({ redirect: '/' })
 }
+
+function handleRetry() {
+  location.reload()
+}
 </script>
 
 <template>
   <div class="error-page">
-    <div class="error-page__card">
+    <div class="error-page__card" :class="{ 'is-danger': !isNotFound }">
       <p class="error-page__code">{{ error?.statusCode ?? 500 }}</p>
       <h1 v-if="isNotFound">Esta página no existe</h1>
       <h1 v-else>Algo salió mal</h1>
@@ -27,12 +31,20 @@ function handleBackHome() {
           El enlace que seguiste puede estar roto o la página fue movida. Revisa la dirección o vuelve al inicio.
         </template>
         <template v-else>
-          Ocurrió un error inesperado al procesar tu solicitud. Puedes volver al inicio e intentarlo nuevamente.
+          Ocurrió un error inesperado al procesar tu solicitud. Puedes reintentar o volver al inicio.
         </template>
       </p>
-      <button class="btn btn-primary error-page__btn" @click="handleBackHome">
-        Volver al inicio
-      </button>
+      <div class="error-page__actions">
+        <button v-if="!isNotFound" type="button" class="btn btn-outline error-page__btn" @click="handleRetry">
+          Reintentar
+        </button>
+        <NuxtLink v-if="isNotFound" to="/catalogo" class="btn btn-outline error-page__btn">
+          Ir al catálogo
+        </NuxtLink>
+        <button type="button" class="btn btn-primary error-page__btn" @click="handleBackHome">
+          Volver al inicio
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -71,6 +83,14 @@ function handleBackHome() {
   color: var(--color-ink-muted);
   font-size: 0.92rem;
   margin: 0 0 1.5rem;
+}
+.error-page__card.is-danger {
+  border-top-color: var(--color-danger);
+}
+.error-page__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
 }
 .error-page__btn {
   width: 100%;

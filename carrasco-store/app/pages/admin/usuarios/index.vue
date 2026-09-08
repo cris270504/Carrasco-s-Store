@@ -71,7 +71,7 @@ function formatDate(value: string) {
               {{ user.active ? 'Activo' : 'Suspendido' }}
             </td>
             <td>
-              <button type="button" class="btn btn-outline users-page__view">Ver detalle</button>
+              <button type="button" class="btn btn-outline users-page__view" disabled title="Próximamente">Ver detalle</button>
             </td>
           </tr>
           <tr v-if="filtered.length === 0">
