@@ -103,7 +103,7 @@ async function handleLogout() {
   width: 230px;
   flex-shrink: 0;
   padding: 1.25rem 1rem;
-  background: #14161a;
+  background: #1d1712;
   color: rgba(255, 255, 255, 0.85);
   position: sticky;
   top: 0;
@@ -119,7 +119,10 @@ async function handleLogout() {
   margin-bottom: 2rem;
 }
 .admin-sidebar__logo span {
-  color: var(--color-accent-hover);
+  /* El sidebar es siempre oscuro sin importar el tema claro/oscuro del
+     sitio: --color-accent-hover asume texto sobre fondo claro y quedaria
+     casi invisible aca, por eso un dorado fijo en vez de la variable. */
+  color: #e0a83d;
 }
 .admin-sidebar__nav {
   display: flex;

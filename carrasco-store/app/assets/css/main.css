@@ -1,82 +1,82 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Nunito+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
 
 :root {
-  /* Superficies */
-  --color-bg: #eff1ee;
-  --color-surface: #ffffff;
-  --color-ink: #171a1c;
-  --color-ink-muted: #5b6168;
-  --color-ink-faint: #6d737a;
-  --color-border: #dee1dc;
-  --color-border-strong: #c4c8c1;
+  /* Superficies — crema calido en vez de gris frio */
+  --color-bg: #faf3e7;
+  --color-surface: #fffcf6;
+  --color-ink: #2b2420;
+  --color-ink-muted: #6b5d4f;
+  --color-ink-faint: #7a6a57;
+  --color-border: #e8dcc8;
+  --color-border-strong: #d4c4a8;
 
-  /* Acento primario */
-  --color-accent: #2b4fe0;
-  --color-accent-hover: #1f3bb0;
-  --color-accent-tint: #e7ecfb;
+  /* Acento primario — dorado/bronce, distinto de las 3 categorias y del rojo de peligro */
+  --color-accent: #8c6720;
+  --color-accent-hover: #6e4f18;
+  --color-accent-tint: #f6ead0;
 
-  /* Semántica por tipo de ítem */
-  --color-service: #c46a1f;
-  --color-service-tint: #fbeedd;
-  --color-service-ink: #7a3f0e;
+  /* Semántica por tipo de ítem, tonos calidos */
+  --color-service: #bd5b26;
+  --color-service-tint: #fae6d2;
+  --color-service-ink: #6b3313;
 
-  --color-physical: #12806a;
-  --color-physical-tint: #dff3ee;
-  --color-physical-ink: #0b4f42;
+  --color-physical: #5f7a47;
+  --color-physical-tint: #e7efdd;
+  --color-physical-ink: #33421f;
 
-  --color-digital: #6a46c9;
-  --color-digital-tint: #efe9fb;
-  --color-digital-ink: #432e85;
+  --color-digital: #8c5a93;
+  --color-digital-tint: #f1e6f2;
+  --color-digital-ink: #52325a;
 
-  --color-danger: #c23b32;
-  --color-danger-tint: #fbe9e7;
-  --color-success: #1f8a55;
+  --color-danger: #b23a2e;
+  --color-danger-tint: #fae2df;
+  --color-success: #4c7a3e;
 
-  /* Tipografía */
-  --font-display: 'Space Grotesk', sans-serif;
-  --font-body: 'Inter', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  /* Tipografía — serif calida para titulos, sans redondeada para texto */
+  --font-display: 'Fraunces', serif;
+  --font-body: 'Nunito Sans', sans-serif;
+  --font-mono: 'Space Mono', monospace;
 
-  /* Layout */
-  --radius-card: 12px;
-  --radius-control: 8px;
-  --shadow-card: 0 1px 2px rgba(23, 26, 28, 0.04);
-  --shadow-card-hover: 0 8px 20px rgba(23, 26, 28, 0.08);
+  /* Layout — esquinas redondeadas, sombras con tinte calido */
+  --radius-card: 20px;
+  --radius-control: 12px;
+  --shadow-card: 0 1px 2px rgba(43, 36, 32, 0.06);
+  --shadow-card-hover: 0 10px 24px rgba(43, 36, 32, 0.12);
 
   color-scheme: light;
 }
 
 :root[data-theme='dark'] {
-  --color-bg: #121417;
-  --color-surface: #1b1e22;
-  --color-ink: #f1f2f0;
-  --color-ink-muted: #a8adb2;
-  --color-ink-faint: #8a8f94;
-  --color-border: #2a2d31;
-  --color-border-strong: #3c4045;
+  --color-bg: #211b14;
+  --color-surface: #2b2419;
+  --color-ink: #f3e9d8;
+  --color-ink-muted: #c4b39a;
+  --color-ink-faint: #b3a48a;
+  --color-border: #3d3426;
+  --color-border-strong: #52472f;
 
-  --color-accent: #6f8dff;
-  --color-accent-hover: #8ba0ff;
-  --color-accent-tint: #1e2540;
+  --color-accent: #e0a83d;
+  --color-accent-hover: #f0be5e;
+  --color-accent-tint: #3d2f14;
 
-  --color-service: #e0983f;
-  --color-service-tint: #3a2c18;
-  --color-service-ink: #f2c78f;
+  --color-service: #e08a4a;
+  --color-service-tint: #3d2c17;
+  --color-service-ink: #f5c79a;
 
-  --color-physical: #34c9a3;
-  --color-physical-tint: #123a30;
-  --color-physical-ink: #8fe6cc;
+  --color-physical: #8cad6e;
+  --color-physical-tint: #2a331f;
+  --color-physical-ink: #c9ddb0;
 
-  --color-digital: #a98cf0;
-  --color-digital-tint: #2a2145;
-  --color-digital-ink: #cdb9f7;
+  --color-digital: #c79aca;
+  --color-digital-tint: #342a3a;
+  --color-digital-ink: #e8cceb;
 
-  --color-danger: #ea6a5f;
-  --color-danger-tint: #3a1f1c;
-  --color-success: #4bc98a;
+  --color-danger: #e2665a;
+  --color-danger-tint: #3d211d;
+  --color-success: #92c273;
 
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35);
-  --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-card-hover: 0 10px 26px rgba(0, 0, 0, 0.5);
 
   color-scheme: dark;
 }
@@ -106,7 +106,6 @@ h3 {
   font-family: var(--font-display);
   font-weight: 600;
   margin: 0;
-  letter-spacing: -0.01em;
 }
 
 a {
@@ -145,10 +144,10 @@ select {
   justify-content: center;
   gap: 0.4rem;
   font-family: var(--font-body);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.9rem;
-  padding: 0.65rem 1.1rem;
-  border-radius: var(--radius-control);
+  padding: 0.65rem 1.25rem;
+  border-radius: 999px;
   border: 1px solid transparent;
   cursor: pointer;
   transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
