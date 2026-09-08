@@ -36,7 +36,9 @@ async function handleRemove(productId: string) {
       <article v-for="fav in favorites" :key="fav.id" class="favorite-card">
         <NuxtLink :to="`/producto/${fav.slug}`" class="favorite-card__image-link">
           <img v-if="fav.image" :src="fav.image" :alt="fav.name" loading="lazy">
-          <div v-else class="favorite-card__image-placeholder" :class="`is-${fav.type}`" />
+          <div v-else class="favorite-card__image-placeholder" :class="`is-${fav.type}`">
+            <ItemTypeIcon :type="fav.type" :size="28" />
+          </div>
         </NuxtLink>
         <div class="favorite-card__body">
           <NuxtLink :to="`/producto/${fav.slug}`" class="favorite-card__name">{{ fav.name }}</NuxtLink>
@@ -129,10 +131,14 @@ async function handleRemove(productId: string) {
 .favorite-card__image-placeholder {
   width: 100%;
   height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.4;
 }
-.favorite-card__image-placeholder.is-service { background: var(--color-service-tint); }
-.favorite-card__image-placeholder.is-physical { background: var(--color-physical-tint); }
-.favorite-card__image-placeholder.is-digital { background: var(--color-digital-tint); }
+.favorite-card__image-placeholder.is-service { background: var(--color-service-tint); color: var(--color-service-ink); }
+.favorite-card__image-placeholder.is-physical { background: var(--color-physical-tint); color: var(--color-physical-ink); }
+.favorite-card__image-placeholder.is-digital { background: var(--color-digital-tint); color: var(--color-digital-ink); }
 .favorite-card__body {
   padding: 0.8rem;
   display: flex;

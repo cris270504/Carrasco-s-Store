@@ -198,6 +198,42 @@ select {
   background: #a52f27;
 }
 
+/* Spinner de carga para botones (login/registro/guardar/etc.): antes el
+   unico feedback era el cambio de texto, sin ninguna señal visual inmediata
+   de que el click se registro. Uso: <button class="btn ..." :class="{ 'btn--loading': loading }">. */
+.btn--loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+.btn--loading::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  animation: btn-spin 0.6s linear infinite;
+}
+.btn-outline.btn--loading::after,
+.btn-ghost.btn--loading::after {
+  border-color: var(--color-border-strong);
+  border-top-color: var(--color-ink-muted);
+}
+@keyframes btn-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Tablas del panel admin: mismo patron .admin-table repetido por pagina;
+   estas reglas aplican globalmente para no duplicarlas 4 veces. */
+.admin-table tbody tr:hover {
+  background: var(--color-bg);
+}
+.admin-table__num {
+  text-align: right;
+}
+
 /* Divisor "ticket perforado" — firma visual de las tarjetas de producto */
 .ticket-divider {
   position: relative;

@@ -91,7 +91,9 @@ async function handleAdd() {
     <div class="product-layout">
       <div class="product-image">
         <NuxtImg v-if="product.images?.[0]" :src="product.images[0]" :alt="product.name" width="600" height="600" fit="cover" />
-        <div v-else class="product-image__placeholder" :class="`is-${product.type}`" />
+        <div v-else class="product-image__placeholder" :class="`is-${product.type}`">
+          <ItemTypeIcon :type="product.type" :size="56" />
+        </div>
       </div>
 
       <div class="product-info">
@@ -215,10 +217,14 @@ async function handleAdd() {
 .product-image__placeholder {
   width: 100%;
   height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.4;
 }
-.product-image__placeholder.is-service { background: var(--color-service-tint); }
-.product-image__placeholder.is-physical { background: var(--color-physical-tint); }
-.product-image__placeholder.is-digital { background: var(--color-digital-tint); }
+.product-image__placeholder.is-service { background: var(--color-service-tint); color: var(--color-service-ink); }
+.product-image__placeholder.is-physical { background: var(--color-physical-tint); color: var(--color-physical-ink); }
+.product-image__placeholder.is-digital { background: var(--color-digital-tint); color: var(--color-digital-ink); }
 
 .product-info__badge {
   display: inline-block;

@@ -108,7 +108,9 @@ async function handleCheckout() {
         <li v-for="line in items" :key="line.id" class="cart-line">
           <NuxtLink :to="`/producto/${line.slug}`" class="cart-line__image-link">
             <NuxtImg v-if="line.image" :src="line.image" :alt="line.name" loading="lazy" width="72" height="72" fit="cover" />
-            <div v-else class="cart-line__image-placeholder" :class="`is-${line.itemType}`" />
+            <div v-else class="cart-line__image-placeholder" :class="`is-${line.itemType}`">
+              <ItemTypeIcon :type="line.itemType" :size="28" />
+            </div>
           </NuxtLink>
 
           <div class="cart-line__body">
@@ -366,10 +368,14 @@ async function handleCheckout() {
 .cart-line__image-placeholder {
   width: 100%;
   height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.4;
 }
-.cart-line__image-placeholder.is-service { background: var(--color-service-tint); }
-.cart-line__image-placeholder.is-physical { background: var(--color-physical-tint); }
-.cart-line__image-placeholder.is-digital { background: var(--color-digital-tint); }
+.cart-line__image-placeholder.is-service { background: var(--color-service-tint); color: var(--color-service-ink); }
+.cart-line__image-placeholder.is-physical { background: var(--color-physical-tint); color: var(--color-physical-ink); }
+.cart-line__image-placeholder.is-digital { background: var(--color-digital-tint); color: var(--color-digital-ink); }
 
 .cart-line__body {
   min-width: 0;

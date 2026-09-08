@@ -70,7 +70,9 @@ const isOutOfStock = computed(() => {
         height="300"
         fit="cover"
       />
-      <div v-else class="product-card__image-placeholder" :class="typeMeta.className" />
+      <div v-else class="product-card__image-placeholder" :class="typeMeta.className">
+        <ItemTypeIcon :type="product.type" />
+      </div>
     </NuxtLink>
 
     <button
@@ -188,6 +190,16 @@ const isOutOfStock = computed(() => {
 .product-card--list .ticket-divider {
   margin: 0.6rem 0;
 }
+/* El offset default del divisor (-1.5rem) queda fuera del padding de esta
+   tarjeta (1rem) y el "overflow: hidden" del .product-card (necesario para
+   el zoom de la imagen) lo recorta, perdiendo el efecto de "ticket
+   perforado" — se reduce el offset para que quepa dentro del padding. */
+.product-card .ticket-divider::before {
+  left: -0.4rem;
+}
+.product-card .ticket-divider::after {
+  right: -0.4rem;
+}
 
 .product-card__image-link {
   display: block;
@@ -207,10 +219,14 @@ const isOutOfStock = computed(() => {
 .product-card__image-placeholder {
   width: 100%;
   height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.4;
 }
-.product-card__image-placeholder.is-service { background: var(--color-service-tint); }
-.product-card__image-placeholder.is-physical { background: var(--color-physical-tint); }
-.product-card__image-placeholder.is-digital { background: var(--color-digital-tint); }
+.product-card__image-placeholder.is-service { background: var(--color-service-tint); color: var(--color-service-ink); }
+.product-card__image-placeholder.is-physical { background: var(--color-physical-tint); color: var(--color-physical-ink); }
+.product-card__image-placeholder.is-digital { background: var(--color-digital-tint); color: var(--color-digital-ink); }
 
 .product-card__body {
   padding: 0.9rem 1rem 1.1rem;
