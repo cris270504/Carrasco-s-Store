@@ -265,7 +265,7 @@ const heroFloaters = [
 .hero {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(180deg, #241d15 0%, #2b2118 100%);
+  background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
   color: #fff;
   padding: 5rem 1.5rem;
 }
@@ -274,7 +274,7 @@ const heroFloaters = [
   inset: -20% -10% auto auto;
   width: 620px;
   height: 620px;
-  background: radial-gradient(circle, rgba(224, 168, 61, 0.4) 0%, rgba(224, 168, 61, 0) 70%);
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.35) 0%, rgba(59, 130, 246, 0) 70%);
   filter: blur(10px);
   pointer-events: none;
 }
@@ -295,7 +295,7 @@ const heroFloaters = [
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.16);
-  color: #f3d9a3;
+  color: #93c5fd;
   margin-bottom: 1.25rem;
 }
 .hero h1 {
@@ -357,7 +357,7 @@ const heroFloaters = [
   align-items: center;
   gap: 0.6rem;
   padding: 0.9rem 1.2rem;
-  border-radius: 14px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.14);
   backdrop-filter: blur(6px);

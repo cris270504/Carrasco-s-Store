@@ -41,7 +41,7 @@ const year = new Date().getFullYear()
 <style scoped>
 .app-footer {
   margin-top: 3rem;
-  background: #241d15;
+  background: #0f172a;
   color: rgba(255, 255, 255, 0.78);
 }
 .app-footer__inner {

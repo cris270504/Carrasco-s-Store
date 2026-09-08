@@ -1,82 +1,82 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Nunito+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
 :root {
-  /* Superficies — crema calido en vez de gris frio */
-  --color-bg: #faf3e7;
-  --color-surface: #fffcf6;
-  --color-ink: #2b2420;
-  --color-ink-muted: #6b5d4f;
-  --color-ink-faint: #7a6a57;
-  --color-border: #e8dcc8;
-  --color-border-strong: #d4c4a8;
+  /* Superficies — blanco/gris neutro, paleta corporativa estandar */
+  --color-bg: #f4f6f9;
+  --color-surface: #ffffff;
+  --color-ink: #0f172a;
+  --color-ink-muted: #55617a;
+  --color-ink-faint: #7a869c;
+  --color-border: #e2e8f0;
+  --color-border-strong: #cbd5e1;
 
-  /* Acento primario — dorado/bronce, distinto de las 3 categorias y del rojo de peligro */
-  --color-accent: #8c6720;
-  --color-accent-hover: #6e4f18;
-  --color-accent-tint: #f6ead0;
+  /* Acento primario — azul, el color mas estandar en e-commerce/SaaS */
+  --color-accent: #2563eb;
+  --color-accent-hover: #1d4ed8;
+  --color-accent-tint: #dbeafe;
 
-  /* Semántica por tipo de ítem, tonos calidos */
-  --color-service: #bd5b26;
-  --color-service-tint: #fae6d2;
-  --color-service-ink: #6b3313;
+  /* Semántica por tipo de ítem */
+  --color-service: #d97706;
+  --color-service-tint: #fef3c7;
+  --color-service-ink: #78350f;
 
-  --color-physical: #5f7a47;
-  --color-physical-tint: #e7efdd;
-  --color-physical-ink: #33421f;
+  --color-physical: #16a34a;
+  --color-physical-tint: #dcfce7;
+  --color-physical-ink: #14532d;
 
-  --color-digital: #8c5a93;
-  --color-digital-tint: #f1e6f2;
-  --color-digital-ink: #52325a;
+  --color-digital: #7c3aed;
+  --color-digital-tint: #ede9fe;
+  --color-digital-ink: #4c1d95;
 
-  --color-danger: #b23a2e;
-  --color-danger-tint: #fae2df;
-  --color-success: #4c7a3e;
+  --color-danger: #dc2626;
+  --color-danger-tint: #fee2e2;
+  --color-success: #16a34a;
 
-  /* Tipografía — serif calida para titulos, sans redondeada para texto */
-  --font-display: 'Fraunces', serif;
-  --font-body: 'Nunito Sans', sans-serif;
-  --font-mono: 'Space Mono', monospace;
+  /* Tipografía — una sola sans geometrica para todo, look corporativo */
+  --font-display: 'Inter', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 
-  /* Layout — esquinas redondeadas, sombras con tinte calido */
-  --radius-card: 20px;
-  --radius-control: 12px;
-  --shadow-card: 0 1px 2px rgba(43, 36, 32, 0.06);
-  --shadow-card-hover: 0 10px 24px rgba(43, 36, 32, 0.12);
+  /* Layout — esquinas rectas, sombras neutras y planas */
+  --radius-card: 8px;
+  --radius-control: 6px;
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-card-hover: 0 8px 20px rgba(15, 23, 42, 0.1);
 
   color-scheme: light;
 }
 
 :root[data-theme='dark'] {
-  --color-bg: #211b14;
-  --color-surface: #2b2419;
-  --color-ink: #f3e9d8;
-  --color-ink-muted: #c4b39a;
-  --color-ink-faint: #b3a48a;
-  --color-border: #3d3426;
-  --color-border-strong: #52472f;
+  --color-bg: #0f172a;
+  --color-surface: #1e293b;
+  --color-ink: #f1f5f9;
+  --color-ink-muted: #99a4bb;
+  --color-ink-faint: #6b7690;
+  --color-border: #334155;
+  --color-border-strong: #475569;
 
-  --color-accent: #e0a83d;
-  --color-accent-hover: #f0be5e;
-  --color-accent-tint: #3d2f14;
+  --color-accent: #3b82f6;
+  --color-accent-hover: #60a5fa;
+  --color-accent-tint: #1e3a5f;
 
-  --color-service: #e08a4a;
-  --color-service-tint: #3d2c17;
-  --color-service-ink: #f5c79a;
+  --color-service: #fbbf24;
+  --color-service-tint: #451a03;
+  --color-service-ink: #fde68a;
 
-  --color-physical: #8cad6e;
-  --color-physical-tint: #2a331f;
-  --color-physical-ink: #c9ddb0;
+  --color-physical: #4ade80;
+  --color-physical-tint: #14532d;
+  --color-physical-ink: #bbf7d0;
 
-  --color-digital: #c79aca;
-  --color-digital-tint: #342a3a;
-  --color-digital-ink: #e8cceb;
+  --color-digital: #c4b5fd;
+  --color-digital-tint: #3b2f6b;
+  --color-digital-ink: #ddd6fe;
 
-  --color-danger: #e2665a;
-  --color-danger-tint: #3d211d;
-  --color-success: #92c273;
+  --color-danger: #f87171;
+  --color-danger-tint: #450a0a;
+  --color-success: #4ade80;
 
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35);
-  --shadow-card-hover: 0 10px 26px rgba(0, 0, 0, 0.5);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.55);
 
   color-scheme: dark;
 }
@@ -104,7 +104,8 @@ h1,
 h2,
 h3 {
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   margin: 0;
 }
 
@@ -144,16 +145,16 @@ select {
   justify-content: center;
   gap: 0.4rem;
   font-family: var(--font-body);
-  font-weight: 700;
+  font-weight: 600;
   font-size: 0.9rem;
   padding: 0.65rem 1.25rem;
-  border-radius: 999px;
+  border-radius: var(--radius-control);
   border: 1px solid transparent;
   cursor: pointer;
-  transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .btn:active {
-  transform: scale(0.98);
+  transform: none;
 }
 .btn:disabled {
   opacity: 0.5;
@@ -194,7 +195,7 @@ select {
   color: #fff;
 }
 .btn-danger:hover:not(:disabled) {
-  background: #a52f27;
+  background: #b91c1c;
 }
 
 /* Spinner de carga para botones (login/registro/guardar/etc.): antes el

@@ -152,7 +152,7 @@ async function handleAddToCart(product: Product) {
 
 <style scoped>
 .catalog-hero {
-  background: linear-gradient(135deg, #241d15 0%, #37291b 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
   color: #fff;
   padding: 2.75rem 1.5rem;
   text-align: center;
@@ -160,7 +160,7 @@ async function handleAddToCart(product: Product) {
 .catalog-hero__eyebrow {
   font-family: var(--font-mono);
   font-size: 0.78rem;
-  color: #f3d9a3;
+  color: #93c5fd;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin: 0 0 0.5rem;
