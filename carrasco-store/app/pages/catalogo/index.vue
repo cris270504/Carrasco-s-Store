@@ -152,26 +152,26 @@ async function handleAddToCart(product: Product) {
 
 <style scoped>
 .catalog-hero {
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-  color: #fff;
+  background: var(--color-service);
+  color: #faf1e3;
   padding: 2.75rem 1.5rem;
   text-align: center;
 }
 .catalog-hero__eyebrow {
   font-family: var(--font-mono);
   font-size: 0.78rem;
-  color: #93c5fd;
+  color: #f3b9c8;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin: 0 0 0.5rem;
 }
 .catalog-hero h1 {
-  font-size: 1.9rem;
+  font-size: 2.1rem;
   max-width: 640px;
   margin: 0 auto;
 }
 .catalog-hero__subtitle {
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(250, 241, 227, 0.8);
   margin: 0.6rem 0 0;
 }
 

@@ -10,7 +10,7 @@ onMounted(() => { init() })
 <template>
   <header class="app-header">
     <div class="app-header__inner">
-      <NuxtLink to="/" class="app-header__logo">Carrasco Store</NuxtLink>
+      <NuxtLink to="/" class="app-header__logo"><span>Carrasco</span> Store</NuxtLink>
 
       <nav class="app-header__nav" aria-label="Navegación principal">
         <NuxtLink to="/catalogo" class="app-header__link">Catálogo</NuxtLink>
@@ -92,27 +92,42 @@ onMounted(() => { init() })
 </template>
 
 <style scoped>
+/* La barra siempre es negra sin importar el tema claro/oscuro del sitio,
+   como el nav de la referencia — por eso valores fijos en vez de las
+   variables de superficie. */
 .app-header {
   position: sticky;
   top: 0;
   z-index: 20;
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
+  background: #16110d;
 }
 .app-header__inner {
   max-width: 1180px;
   margin: 0 auto;
-  padding: 0.85rem 1.5rem;
+  padding: 0.7rem 1.5rem;
   display: flex;
   align-items: center;
   gap: 1.5rem;
 }
 .app-header__logo {
-  font-family: var(--font-display);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  font-family: var(--font-body);
   font-weight: 600;
-  font-size: 1.05rem;
+  font-size: 0.85rem;
   text-decoration: none;
-  color: var(--color-ink);
+  color: #f6ecdc;
+}
+.app-header__logo span {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.05rem;
+  text-transform: uppercase;
+  background: #faf1e3;
+  color: #16110d;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
 }
 .app-header__nav {
   display: flex;
@@ -120,19 +135,19 @@ onMounted(() => { init() })
   margin-right: auto;
 }
 .app-header__link {
-  font-size: 0.9rem;
-  font-weight: 500;
+  font-size: 0.88rem;
+  font-weight: 600;
   text-decoration: none;
-  color: var(--color-ink-muted);
+  color: rgba(246, 236, 220, 0.75);
 }
 .app-header__link:hover,
 .app-header__link.router-link-active {
-  color: var(--color-accent);
+  color: #2fbf8f;
 }
 .app-header__actions {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.4rem;
 }
 .app-header__icon-link {
   position: relative;
@@ -144,12 +159,12 @@ onMounted(() => { init() })
   border-radius: 50%;
   border: none;
   background: none;
-  color: var(--color-ink-muted);
+  color: rgba(246, 236, 220, 0.75);
   cursor: pointer;
 }
 .app-header__icon-link:hover {
-  background: var(--color-bg);
-  color: var(--color-ink);
+  background: rgba(246, 236, 220, 0.1);
+  color: #f6ecdc;
 }
 .app-header__badge {
   position: absolute;
@@ -159,8 +174,8 @@ onMounted(() => { init() })
   height: 16px;
   padding: 0 3px;
   border-radius: 999px;
-  background: var(--color-accent);
-  color: #fff;
+  background: #2fbf8f;
+  color: #16110d;
   font-size: 0.62rem;
   font-weight: 700;
   line-height: 16px;

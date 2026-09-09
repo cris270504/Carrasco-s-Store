@@ -1,82 +1,86 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
 :root {
-  /* Superficies — blanco/gris neutro, paleta corporativa estandar */
-  --color-bg: #f4f6f9;
+  /* Superficies — papel crema + tarjetas blancas con marco negro, look
+     editorial/afiche (inspirado en diariodecurwen.com) */
+  --color-bg: #faf1e3;
   --color-surface: #ffffff;
-  --color-ink: #0f172a;
-  --color-ink-muted: #55617a;
-  --color-ink-faint: #7a869c;
-  --color-border: #e2e8f0;
-  --color-border-strong: #cbd5e1;
+  --color-ink: #16110d;
+  --color-ink-muted: #5a4d3f;
+  --color-ink-faint: #8a7a66;
+  --color-border: #e6d8c1;
+  --color-border-strong: #16110d;
 
-  /* Acento primario — azul, el color mas estandar en e-commerce/SaaS */
-  --color-accent: #2563eb;
-  --color-accent-hover: #1d4ed8;
-  --color-accent-tint: #dbeafe;
+  /* Acento primario — verde afiche */
+  --color-accent: #048e69;
+  --color-accent-hover: #036b4f;
+  --color-accent-tint: #d3efe3;
 
-  /* Semántica por tipo de ítem */
-  --color-service: #d97706;
-  --color-service-tint: #fef3c7;
-  --color-service-ink: #78350f;
+  /* Semántica por tipo de ítem — verde/violeta/burdeos, como los bloques
+     de color de la referencia */
+  --color-service: #8a0d30;
+  --color-service-tint: #f3d9de;
+  --color-service-ink: #6e0f2a;
 
-  --color-physical: #16a34a;
-  --color-physical-tint: #dcfce7;
-  --color-physical-ink: #14532d;
+  --color-physical: #048e69;
+  --color-physical-tint: #d3efe3;
+  --color-physical-ink: #04543d;
 
-  --color-digital: #7c3aed;
-  --color-digital-tint: #ede9fe;
-  --color-digital-ink: #4c1d95;
+  --color-digital: #7c4dff;
+  --color-digital-tint: #ebe3ff;
+  --color-digital-ink: #4b2a9e;
 
-  --color-danger: #dc2626;
-  --color-danger-tint: #fee2e2;
-  --color-success: #16a34a;
+  --color-danger: #c81e3a;
+  --color-danger-tint: #f8d9de;
+  --color-success: #048e69;
 
-  /* Tipografía — una sola sans geometrica para todo, look corporativo */
-  --font-display: 'Inter', sans-serif;
-  --font-body: 'Inter', sans-serif;
+  /* Tipografía — Anton (afiche, mayúsculas) para títulos, Barlow para
+     cuerpo, la misma combinación de la referencia */
+  --font-display: 'Anton', 'Impact', sans-serif;
+  --font-body: 'Barlow', 'Arial', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* Layout — esquinas rectas, sombras neutras y planas */
-  --radius-card: 8px;
-  --radius-control: 6px;
-  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.06);
-  --shadow-card-hover: 0 8px 20px rgba(15, 23, 42, 0.1);
+  /* Layout — esquinas suaves, botones en píldora y sombra dura sin
+     difuminar (offset puro), la firma visual del estilo "brutalista" */
+  --radius-card: 14px;
+  --radius-control: 999px;
+  --shadow-card: 4px 4px 0 0 var(--color-border-strong);
+  --shadow-card-hover: 7px 7px 0 0 var(--color-border-strong);
 
   color-scheme: light;
 }
 
 :root[data-theme='dark'] {
-  --color-bg: #0f172a;
-  --color-surface: #1e293b;
-  --color-ink: #f1f5f9;
-  --color-ink-muted: #99a4bb;
-  --color-ink-faint: #6b7690;
-  --color-border: #334155;
-  --color-border-strong: #475569;
+  --color-bg: #171310;
+  --color-surface: #211b16;
+  --color-ink: #f6ecdc;
+  --color-ink-muted: #b9a892;
+  --color-ink-faint: #8a7a66;
+  --color-border: #3a3128;
+  --color-border-strong: #f6ecdc;
 
-  --color-accent: #3b82f6;
-  --color-accent-hover: #60a5fa;
-  --color-accent-tint: #1e3a5f;
+  --color-accent: #2fbf8f;
+  --color-accent-hover: #4dd6a6;
+  --color-accent-tint: #1c3f34;
 
-  --color-service: #fbbf24;
-  --color-service-tint: #451a03;
-  --color-service-ink: #fde68a;
+  --color-service: #e0577b;
+  --color-service-tint: #4a1522;
+  --color-service-ink: #f3b9c8;
 
-  --color-physical: #4ade80;
-  --color-physical-tint: #14532d;
-  --color-physical-ink: #bbf7d0;
+  --color-physical: #2fbf8f;
+  --color-physical-tint: #103d31;
+  --color-physical-ink: #9fe8cf;
 
-  --color-digital: #c4b5fd;
-  --color-digital-tint: #3b2f6b;
-  --color-digital-ink: #ddd6fe;
+  --color-digital: #b39dff;
+  --color-digital-tint: #2e2559;
+  --color-digital-ink: #ddd0ff;
 
-  --color-danger: #f87171;
-  --color-danger-tint: #450a0a;
-  --color-success: #4ade80;
+  --color-danger: #f0708a;
+  --color-danger-tint: #451621;
+  --color-success: #2fbf8f;
 
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.55);
+  --shadow-card: 4px 4px 0 0 rgba(0, 0, 0, 0.6);
+  --shadow-card-hover: 7px 7px 0 0 rgba(0, 0, 0, 0.6);
 
   color-scheme: dark;
 }
@@ -101,11 +105,19 @@ body {
 }
 
 h1,
-h2,
-h3 {
+h2 {
   font-family: var(--font-display);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  line-height: 1.05;
+  margin: 0;
+}
+
+h3 {
+  font-family: var(--font-body);
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
   margin: 0;
 }
 
@@ -145,13 +157,13 @@ select {
   justify-content: center;
   gap: 0.4rem;
   font-family: var(--font-body);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.9rem;
-  padding: 0.65rem 1.25rem;
+  padding: 0.65rem 1.35rem;
   border-radius: var(--radius-control);
-  border: 1px solid transparent;
+  border: 2px solid transparent;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 .btn:active {
   transform: none;
@@ -164,14 +176,22 @@ select {
 
 .btn-primary {
   background: var(--color-accent);
+  border-color: var(--color-border-strong);
   color: #fff;
+  box-shadow: 3px 3px 0 0 var(--color-border-strong);
 }
 .btn-primary:hover:not(:disabled) {
   background: var(--color-accent-hover);
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 0 var(--color-border-strong);
+}
+.btn-primary:active:not(:disabled) {
+  transform: translate(0, 0);
+  box-shadow: 1px 1px 0 0 var(--color-border-strong);
 }
 
 .btn-outline {
-  background: transparent;
+  background: var(--color-surface);
   border-color: var(--color-border-strong);
   color: var(--color-ink);
 }
@@ -195,7 +215,7 @@ select {
   color: #fff;
 }
 .btn-danger:hover:not(:disabled) {
-  background: #b91c1c;
+  background: #9e1830;
 }
 
 /* Spinner de carga para botones (login/registro/guardar/etc.): antes el

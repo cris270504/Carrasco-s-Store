@@ -132,11 +132,11 @@ const isOutOfStock = computed(() => {
   display: flex;
   flex-direction: column;
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  border: 2px solid var(--color-border-strong);
   border-radius: var(--radius-card);
   overflow: hidden;
   box-shadow: var(--shadow-card);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
 .product-card__favorite {
@@ -167,9 +167,8 @@ const isOutOfStock = computed(() => {
   cursor: not-allowed;
 }
 .product-card:hover {
-  transform: translateY(-3px);
+  transform: translate(-3px, -3px);
   box-shadow: var(--shadow-card-hover);
-  border-color: var(--color-border-strong);
 }
 
 .product-card--list {

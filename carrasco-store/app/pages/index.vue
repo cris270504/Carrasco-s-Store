@@ -93,7 +93,7 @@ const heroFloaters = [
       <div class="hero__inner">
         <div class="hero__copy">
           <span class="hero__pill">⚡ Ahora con pagos vía Mercado Pago</span>
-          <h1>Todo lo que tu proyecto necesita, en un solo carrito</h1>
+          <h1>Todo lo que tu proyecto necesita.</h1>
           <p class="hero__subtitle">
             Productos físicos, licencias digitales y servicios técnicos — comprados, pagados y
             entregados sin cambiar de tienda.
@@ -261,21 +261,20 @@ const heroFloaters = [
   flex-direction: column;
 }
 
-/* Hero */
+/* Hero — bloque de color plano estilo afiche, como la portada de referencia */
 .hero {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
-  color: #fff;
+  background: var(--color-accent);
+  color: #16110d;
   padding: 5rem 1.5rem;
 }
 .hero__glow {
   position: absolute;
-  inset: -20% -10% auto auto;
-  width: 620px;
-  height: 620px;
-  background: radial-gradient(circle, rgba(59, 130, 246, 0.35) 0%, rgba(59, 130, 246, 0) 70%);
-  filter: blur(10px);
+  inset: auto -8% -30% auto;
+  width: 560px;
+  height: 560px;
+  background: radial-gradient(circle, rgba(255, 90, 60, 0.35) 0%, rgba(255, 90, 60, 0) 70%);
   pointer-events: none;
 }
 .hero__inner {
@@ -290,21 +289,20 @@ const heroFloaters = [
 .hero__pill {
   display: inline-block;
   font-size: 0.78rem;
-  font-weight: 600;
+  font-weight: 700;
   padding: 0.4rem 0.9rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  color: #93c5fd;
+  background: #16110d;
+  color: #faf1e3;
   margin-bottom: 1.25rem;
 }
 .hero h1 {
-  font-size: 2.7rem;
-  line-height: 1.14;
+  font-size: 3.1rem;
   margin: 0;
 }
 .hero__subtitle {
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(22, 17, 13, 0.78);
+  font-weight: 500;
   font-size: 1.04rem;
   max-width: 480px;
   margin: 1.2rem 0 0;
@@ -318,17 +316,25 @@ const heroFloaters = [
 .hero__cta {
   font-size: 0.98rem;
   padding: 0.85rem 1.75rem;
+  background: #16110d;
+  border-color: #16110d;
+  color: #faf1e3;
+  box-shadow: 3px 3px 0 0 rgba(22, 17, 13, 0.35);
+}
+.hero__cta:hover {
+  background: #2b241e;
 }
 .hero__cta-secondary {
   font-size: 0.98rem;
   padding: 0.85rem 1.75rem;
-  border-color: rgba(255, 255, 255, 0.35);
-  color: #fff;
+  background: transparent;
+  border-color: #16110d;
+  color: #16110d;
 }
 .hero__cta-secondary:hover {
-  border-color: #fff;
-  color: #fff;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(22, 17, 13, 0.08);
+  border-color: #16110d;
+  color: #16110d;
 }
 .hero__trust {
   display: flex;
@@ -336,14 +342,15 @@ const heroFloaters = [
   gap: 1.5rem;
   margin-top: 2.25rem;
   padding-top: 1.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  border-top: 2px solid rgba(22, 17, 13, 0.2);
 }
 .hero__trust-item {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
   font-size: 0.82rem;
-  color: rgba(255, 255, 255, 0.7);
+  font-weight: 600;
+  color: rgba(22, 17, 13, 0.75);
 }
 
 .hero__visual {
@@ -357,16 +364,16 @@ const heroFloaters = [
   align-items: center;
   gap: 0.6rem;
   padding: 0.9rem 1.2rem;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(6px);
-  font-family: var(--font-display);
-  font-weight: 600;
+  border-radius: 12px;
+  background: #faf1e3;
+  border: 2px solid #16110d;
+  font-family: var(--font-body);
+  font-weight: 700;
   font-size: 0.95rem;
-  color: #fff;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+  color: #16110d;
+  box-shadow: 5px 5px 0 0 #16110d;
   animation: float 5s ease-in-out infinite;
+  transform: rotate(var(--rot, 0deg));
 }
 .hero__floater-icon {
   display: flex;
@@ -381,13 +388,13 @@ const heroFloaters = [
 .hero__floater.is-digital .hero__floater-icon { background: var(--color-digital-tint); color: var(--color-digital-ink); }
 .hero__floater.is-service .hero__floater-icon { background: var(--color-service-tint); color: var(--color-service-ink); }
 
-.hero__floater--0 { top: 4%; left: 8%; animation-delay: 0s; }
-.hero__floater--1 { top: 42%; left: 32%; animation-delay: 0.6s; z-index: 2; }
-.hero__floater--2 { bottom: 6%; left: 2%; animation-delay: 1.2s; }
+.hero__floater--0 { top: 4%; left: 8%; animation-delay: 0s; --rot: -4deg; }
+.hero__floater--1 { top: 42%; left: 32%; animation-delay: 0.6s; z-index: 2; --rot: 3deg; }
+.hero__floater--2 { bottom: 6%; left: 2%; animation-delay: 1.2s; --rot: -2deg; }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  0%, 100% { transform: rotate(var(--rot, 0deg)) translateY(0); }
+  50% { transform: rotate(var(--rot, 0deg)) translateY(-10px); }
 }
 
 /* Section rhythm */
@@ -438,8 +445,8 @@ const heroFloaters = [
 
 .offers {
   background: var(--color-surface);
-  border-top: 1px solid var(--color-border);
-  border-bottom: 1px solid var(--color-border);
+  border-top: 2px solid var(--color-border-strong);
+  border-bottom: 2px solid var(--color-border-strong);
   padding: 3.5rem 0;
 }
 .offers__grid {
@@ -457,23 +464,17 @@ const heroFloaters = [
   gap: 0.6rem;
   padding: 1.75rem;
   border-radius: var(--radius-card);
-  border: 1px solid var(--color-border);
-  background: var(--color-bg);
+  border: 2px solid var(--color-border-strong);
+  background: var(--color-surface);
   text-decoration: none;
   color: var(--color-ink);
-  border-top: 3px solid var(--color-border-strong);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  box-shadow: var(--shadow-card);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 .offer-card:hover {
-  transform: translateY(-4px);
+  transform: translate(-3px, -3px);
   box-shadow: var(--shadow-card-hover);
 }
-.offer-card.is-physical { border-top-color: var(--color-physical); }
-.offer-card.is-digital { border-top-color: var(--color-digital); }
-.offer-card.is-service { border-top-color: var(--color-service); }
-.offer-card.is-physical:hover { border-color: var(--color-physical); }
-.offer-card.is-digital:hover { border-color: var(--color-digital); }
-.offer-card.is-service:hover { border-color: var(--color-service); }
 
 .offer-card__icon {
   display: flex;
@@ -539,11 +540,12 @@ const heroFloaters = [
   padding: 1.4rem;
   border-radius: var(--radius-card);
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  border: 2px solid var(--color-border-strong);
+  box-shadow: var(--shadow-card);
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 .benefit-card:hover {
-  transform: translateY(-3px);
+  transform: translate(-3px, -3px);
   box-shadow: var(--shadow-card-hover);
 }
 .benefit-card__icon {
@@ -572,16 +574,27 @@ const heroFloaters = [
   margin: 0.5rem auto 3.5rem;
   padding: 2.75rem 1.5rem;
   text-align: center;
-  background: var(--color-accent-tint);
+  background: var(--color-service);
+  color: #faf1e3;
   border-radius: var(--radius-card);
+  border: 2px solid var(--color-border-strong);
+  box-shadow: var(--shadow-card);
 }
 .cta-band h2 {
-  font-size: 1.4rem;
+  font-size: 1.6rem;
   margin-bottom: 0.5rem;
 }
 .cta-band p {
-  color: var(--color-ink-muted);
+  color: rgba(250, 241, 227, 0.82);
   margin: 0 0 1.3rem;
+}
+.cta-band .btn-primary {
+  background: #faf1e3;
+  color: var(--color-service);
+  border-color: var(--color-border-strong);
+}
+.cta-band .btn-primary:hover {
+  background: #fff;
 }
 
 @media (min-width: 900px) {
