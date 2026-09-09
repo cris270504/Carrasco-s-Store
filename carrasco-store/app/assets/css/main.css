@@ -55,8 +55,13 @@
   --color-surface: #211b16;
   --color-ink: #f6ecdc;
   --color-ink-muted: #b9a892;
-  --color-ink-faint: #8a7a66;
-  --color-border: #3a3128;
+  /* #8a7a66 original quedaba en ~4.1:1 sobre --color-surface, por debajo
+     del minimo AA (4.5:1) para texto normal — encabezados de tabla,
+     "PANEL INTERNO" y demas texto secundario se veian lavados en modo
+     oscuro. Aclarado a ~5.3:1 manteniendo la jerarquia (mas tenue que
+     --color-ink-muted, pero legible). */
+  --color-ink-faint: #a3907a;
+  --color-border: #4a4035;
   --color-border-strong: #f6ecdc;
 
   --color-accent: #2fbf8f;
@@ -133,6 +138,14 @@ input,
 textarea,
 select {
   color: inherit;
+}
+
+/* El estilo por defecto del navegador para el placeholder no sigue el
+   tema — en modo oscuro quedaba casi invisible sobre fondos oscuros. */
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-ink-faint);
+  opacity: 1;
 }
 
 ::selection {
