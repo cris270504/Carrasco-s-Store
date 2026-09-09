@@ -153,6 +153,8 @@ async function handleLogout() {
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1.75rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid var(--color-border-strong);
   flex-wrap: wrap;
 }
 .dashboard__eyebrow {
@@ -180,19 +182,22 @@ async function handleLogout() {
 }
 .dashboard-card {
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  border: 2px solid var(--color-border-strong);
   border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
   padding: 1.25rem;
 }
 .dashboard-card h2 {
+  font-family: var(--font-body);
+  font-weight: 700;
   font-size: 1rem;
   margin-bottom: 0.9rem;
 }
 .dashboard-card__empty {
   text-align: center;
   padding: 1.75rem 1rem;
-  border: 1px dashed var(--color-border-strong);
-  border-radius: var(--radius-control);
+  border: 2px dashed var(--color-border-strong);
+  border-radius: var(--radius-card);
 }
 .dashboard-card__empty p {
   color: var(--color-ink-muted);
@@ -212,6 +217,7 @@ async function handleLogout() {
   gap: 0.6rem;
   padding: 0.7rem 0.8rem;
   background: var(--color-bg);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-control);
   flex-wrap: wrap;
 }

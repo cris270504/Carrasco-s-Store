@@ -127,8 +127,7 @@ async function handleRegister() {
   width: 100%;
   max-width: 380px;
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-top: 3px solid var(--color-accent);
+  border: 2px solid var(--color-border-strong);
   border-radius: var(--radius-card);
   padding: 2rem 1.75rem;
   box-shadow: var(--shadow-card);
