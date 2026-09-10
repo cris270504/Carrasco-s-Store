@@ -2,6 +2,7 @@ import type { H3Event } from 'h3'
 import { and, eq, gte, sql } from 'drizzle-orm'
 import { serverSupabaseServiceRole } from '#supabase/server'
 import {
+  addresses,
   cartItems,
   carts,
   digitalLicenses,
@@ -15,6 +16,8 @@ import {
 } from '../database/schema'
 
 type OrderItem = typeof orderItems.$inferSelect
+type OrderRow = typeof orders.$inferSelect
+type OrderItemWithProduct = OrderItem & { product: { name: string } }
 
 interface MpPaymentInfo {
   mpOrderId?: string | null
@@ -52,7 +55,20 @@ export async function fulfillOrder(event: H3Event, orderId: string, mp: MpPaymen
   }
 
   try {
-    const items = await db.query.orderItems.findMany({ where: eq(orderItems.orderId, orderId) })
+    // Congela el costo vigente de cada producto en el momento del pago, para
+    // que el margen historico (dashboard de finanzas) no cambie si despues se
+    // actualiza products.cost_price.
+    await db.execute(sql`
+      update "order_items" oi
+      set "unit_cost" = p."cost_price"
+      from "products" p
+      where oi."product_id" = p."id" and oi."order_id" = ${orderId} and oi."unit_cost" is null
+    `)
+
+    const items = await db.query.orderItems.findMany({
+      where: eq(orderItems.orderId, orderId),
+      with: { product: { columns: { name: true } } },
+    })
 
     for (const item of items) {
       if (item.itemType === 'physical') {
@@ -74,6 +90,12 @@ export async function fulfillOrder(event: H3Event, orderId: string, mp: MpPaymen
     if (cart) {
       await db.delete(cartItems).where(eq(cartItems.cartId, cart.id))
     }
+
+    // Avisos de compra (correo + WhatsApp a duenos y comprador). Best-effort:
+    // no debe revertir ni ensuciar una orden ya pagada si un canal falla.
+    notifyOrderParties(event, order, items).catch(err =>
+      console.error('[notify] orden pagada:', err),
+    )
   }
   catch (err) {
     // Revierte el claim para que un reintento del webhook pueda volver a procesarla
@@ -108,6 +130,51 @@ async function flagPossibleDoublePayment(orderId: string, mp: MpPaymentInfo) {
     `[MP] Posible doble cobro en orden ${orderId}: pago nuevo ${mp.mpPaymentId}, `
     + `pago existente ${current.mpPaymentId ?? 'desconocido'}`,
   )
+}
+
+// Avisos de una orden pagada: correo + WhatsApp a los duenos y al comprador.
+// Todo best-effort (ver notify.ts / sendEmail / sendWhatsappNotice).
+async function notifyOrderParties(event: H3Event, order: OrderRow, items: OrderItemWithProduct[]) {
+  const shortId = order.id.slice(0, 8).toUpperCase()
+  const total = Number(order.total)
+  const lineItems = items.map(i => ({ name: i.product.name, quantity: i.quantity }))
+
+  const revenue = items.reduce((s, i) => s + Number(i.unitPrice) * i.quantity, 0)
+  const cost = items.reduce((s, i) => s + (i.unitCost === null ? 0 : Number(i.unitCost)) * i.quantity, 0)
+
+  // Email del comprador (auth.users vive en el schema de Supabase).
+  let buyerEmail: string | null = null
+  try {
+    const supabase = serverSupabaseServiceRole(event)
+    const { data } = await supabase.auth.admin.getUserById(order.userId)
+    buyerEmail = data.user?.email ?? null
+  }
+  catch {
+    // sin service role configurado: el comprador no recibe correo, pero la
+    // orden ya quedo bien
+  }
+
+  // Telefono: el de la direccion de envio si existe, si no el capturado en el
+  // checkout digital/servicio (orders.buyerPhone).
+  let phone = order.buyerPhone
+  if (!phone && order.shippingAddressId) {
+    const addr = await db.query.addresses.findFirst({
+      where: eq(addresses.id, order.shippingAddressId),
+      columns: { phone: true },
+    })
+    phone = addr?.phone ?? null
+  }
+
+  await Promise.allSettled([
+    notifyOwnersOfSale({
+      kind: 'store',
+      title: lineItems.map(i => `${i.quantity}× ${i.name}`).join(', '),
+      total,
+      profit: Math.round((revenue - cost) * 100) / 100,
+      orderShortId: shortId,
+    }),
+    notifyBuyerOfOrder({ email: buyerEmail, phone, orderShortId: shortId, items: lineItems, total }),
+  ])
 }
 
 // Decremento atomico: solo resta si hay stock suficiente EN LA MISMA sentencia

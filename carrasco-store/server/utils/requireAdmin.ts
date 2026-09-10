@@ -6,14 +6,13 @@ import { serverSupabaseUser } from '#supabase/server'
 // a la API directamente, asi que cada endpoint /api/admin/** debe revalidar aca.
 export async function requireAdmin(event: H3Event) {
   const user = await serverSupabaseUser(event).catch(() => null)
-  const email = user?.email?.toLowerCase()
 
   const adminEmails = (process.env.ADMIN_EMAILS || '')
     .split(',')
     .map(entry => entry.trim().toLowerCase())
     .filter(Boolean)
 
-  if (!email || !adminEmails.includes(email)) {
+  if (!user?.email || !adminEmails.includes(user.email.toLowerCase())) {
     throw createError({ statusCode: 403, statusMessage: 'No autorizado' })
   }
 

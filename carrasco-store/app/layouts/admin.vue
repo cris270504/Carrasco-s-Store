@@ -3,13 +3,16 @@ const user = useSupabaseUser()
 const supabase = useSupabaseClient()
 const route = useRoute()
 
-const links = [
+const links: { to: string, label: string, icon: string, exact?: boolean }[] = [
   { to: '/admin', label: 'Dashboard', icon: 'grid', exact: true },
+  { to: '/admin/finanzas', label: 'Finanzas', icon: 'chart' },
   { to: '/admin/productos', label: 'Productos', icon: 'box' },
+  { to: '/admin/costos', label: 'Costos', icon: 'tag' },
+  { to: '/admin/ventas-particulares', label: 'Ventas particulares', icon: 'cash' },
   { to: '/admin/ordenes', label: 'Órdenes', icon: 'receipt' },
   { to: '/admin/usuarios', label: 'Usuarios', icon: 'users' },
   { to: '/admin/configuracion', label: 'Configuración', icon: 'gear' },
-] as const
+]
 
 function isActive(to: string, exact?: boolean) {
   return exact ? route.path === to : route.path.startsWith(to)
@@ -41,6 +44,18 @@ async function handleLogout() {
             <rect x="11" y="2" width="7" height="7" rx="1.3" stroke="currentColor" stroke-width="1.5" />
             <rect x="2" y="11" width="7" height="7" rx="1.3" stroke="currentColor" stroke-width="1.5" />
             <rect x="11" y="11" width="7" height="7" rx="1.3" stroke="currentColor" stroke-width="1.5" />
+          </svg>
+          <svg v-else-if="link.icon === 'chart'" width="18" height="18" viewBox="0 0 20 20" fill="none">
+            <path d="M3 3v14h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+            <path d="M6 13l3-4 3 2 4-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <svg v-else-if="link.icon === 'tag'" width="18" height="18" viewBox="0 0 20 20" fill="none">
+            <path d="M10 2H4a2 2 0 0 0-2 2v6l8 8 8-8-8-8Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+            <circle cx="6.5" cy="6.5" r="1.2" fill="currentColor" />
+          </svg>
+          <svg v-else-if="link.icon === 'cash'" width="18" height="18" viewBox="0 0 20 20" fill="none">
+            <rect x="2" y="5" width="16" height="10" rx="1.5" stroke="currentColor" stroke-width="1.5" />
+            <circle cx="10" cy="10" r="2.2" stroke="currentColor" stroke-width="1.5" />
           </svg>
           <svg v-else-if="link.icon === 'box'" width="18" height="18" viewBox="0 0 24 24" fill="none">
             <path d="M3 8l9-4 9 4-9 4-9-4Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />

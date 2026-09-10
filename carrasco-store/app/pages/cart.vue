@@ -57,6 +57,11 @@ const checkingOut = ref(false)
 const checkoutError = ref('')
 const addressErrors = reactive({ fullName: '', line1: '', city: '' })
 
+// Telefono opcional para el aviso de compra por WhatsApp. Solo se pide cuando
+// el carrito NO tiene un producto fisico (esos ya llevan telefono en la
+// direccion de envio).
+const buyerPhone = ref('')
+
 // Pago embebido (Payment Brick): /api/checkout/init crea la orden y devuelve
 // lo que necesita el Brick; el modal maneja el cobro contra /api/checkout/confirm.
 const paymentSession = ref<PaymentSession | null>(null)
@@ -106,7 +111,10 @@ async function handleCheckout() {
 
     paymentSession.value = await $fetch<PaymentSession>('/api/checkout/init', {
       method: 'POST',
-      body: hasPhysicalItem.value ? { addressId } : undefined,
+      body: {
+        ...(hasPhysicalItem.value ? { addressId } : {}),
+        ...(buyerPhone.value.trim() ? { buyerPhone: buyerPhone.value.trim() } : {}),
+      },
     })
     paymentModalOpen.value = true
   }
@@ -258,6 +266,18 @@ async function handleCheckout() {
         <div class="cart-summary__row cart-summary__row--total">
           <span>Total</span>
           <span>S/ {{ total.toFixed(2) }}</span>
+        </div>
+
+        <div v-if="!hasPhysicalItem" class="cart-summary__phone">
+          <label for="cart-wa-phone">WhatsApp para avisarte (opcional)</label>
+          <input
+            id="cart-wa-phone"
+            v-model="buyerPhone"
+            type="tel"
+            inputmode="tel"
+            autocomplete="tel"
+            placeholder="Ej. 999 888 777"
+          >
         </div>
 
         <p v-if="checkoutError" class="cart-summary__error" role="alert">{{ checkoutError }}</p>
@@ -590,6 +610,25 @@ async function handleCheckout() {
   font-weight: 700;
   font-size: 1.05rem;
   font-family: var(--font-mono);
+}
+.cart-summary__phone {
+  margin-top: 0.9rem;
+}
+.cart-summary__phone label {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--color-ink-muted);
+  margin-bottom: 0.3rem;
+}
+.cart-summary__phone input {
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-ink);
 }
 .cart-summary__error {
   color: var(--color-danger);

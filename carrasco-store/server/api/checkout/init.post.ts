@@ -18,6 +18,12 @@ export default defineEventHandler(async (event) => {
   // Falla temprano si MP no esta configurado, antes de crear una orden huerfana.
   const publicKey = getMpPublicKey()
 
+  const body = await readBody(event).catch(() => null)
+  // Telefono opcional para el aviso de compra por WhatsApp (los pedidos con
+  // envio fisico ya lo llevan en la direccion).
+  const rawBuyerPhone = typeof body?.buyerPhone === 'string' ? body.buyerPhone.replace(/[^\d+]/g, '').trim() : ''
+  const buyerPhone = rawBuyerPhone.length >= 6 && rawBuyerPhone.length <= 20 ? rawBuyerPhone : null
+
   const cart = await getOrCreateCart(event)
   const cartData = await getCartResponse(cart.id)
 
@@ -60,7 +66,6 @@ export default defineEventHandler(async (event) => {
   let shippingAddress: typeof addresses.$inferSelect | undefined
 
   if (needsAddress) {
-    const body = await readBody(event).catch(() => null)
     const addressId = body?.addressId
     if (!addressId || typeof addressId !== 'string') {
       throw createError({ statusCode: 400, statusMessage: 'Selecciona una dirección de envío' })
@@ -93,6 +98,7 @@ export default defineEventHandler(async (event) => {
   const [order] = await db.insert(orders).values({
     userId: user.sub,
     status: 'pending_payment',
+    buyerPhone,
     subtotal: String(subtotal),
     tax: String(tax),
     shippingCost: String(shippingCost),
