@@ -2,6 +2,11 @@ import { and, eq } from 'drizzle-orm'
 import { serverSupabaseUser } from '#supabase/server'
 import { addresses, orderItems, orders } from '../../database/schema'
 
+// Paso 1 de 2 del checkout (Checkout API via Orders): "iniciar pago".
+// Valida el carrito, RECALCULA el monto contra el catalogo vigente (nunca se
+// confia en nada del cliente), crea la orden en 'pending_payment' y devuelve
+// lo que el Payment Brick necesita para montarse. El cobro real ocurre en el
+// paso 2 (confirm.post.ts).
 export default defineEventHandler(async (event) => {
   enforceRateLimit(event, { key: 'checkout', limit: 5, windowMs: 60_000 })
 
@@ -9,6 +14,9 @@ export default defineEventHandler(async (event) => {
   if (!user) {
     throw createError({ statusCode: 401, statusMessage: 'Debes iniciar sesion para pagar' })
   }
+
+  // Falla temprano si MP no esta configurado, antes de crear una orden huerfana.
+  const publicKey = getMpPublicKey()
 
   const cart = await getOrCreateCart(event)
   const cartData = await getCartResponse(cart.id)
@@ -21,8 +29,6 @@ export default defineEventHandler(async (event) => {
   // confia en el snapshot guardado en cart_items al agregarlo): si el admin
   // cambio el precio despues de que el cliente lo agrego al carrito, se cobra
   // el precio vigente, igual que ya se hace con el stock.
-  // getProductForCart ya trae el stock vigente junto con el precio: se
-  // reutiliza aca en vez de repetir una query de stock por item (N+1).
   const pricedItems = await Promise.all(cartData.items.map(async (item) => {
     const found = await getProductForCart(item.productId, item.variantId)
     if (!found) {
@@ -49,7 +55,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Sin direccion no hay a donde despachar un producto fisico: se exige antes
-  // de generar la preferencia de pago, no despues de cobrar.
+  // de generar la orden de pago, no despues de cobrar.
   const needsAddress = pricedItems.some(i => i.itemType === 'physical' && i.requiresShipping)
   let shippingAddress: typeof addresses.$inferSelect | undefined
 
@@ -77,6 +83,13 @@ export default defineEventHandler(async (event) => {
   const shippingCost = calcShipping(hasPhysicalItem, shippingFlatRate)
   const total = subtotal + shippingCost
 
+  if (total < MP_MIN_AMOUNT_PEN) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: `El monto minimo de pago con Mercado Pago es S/ ${MP_MIN_AMOUNT_PEN.toFixed(2)}.`,
+    })
+  }
+
   const [order] = await db.insert(orders).values({
     userId: user.sub,
     status: 'pending_payment',
@@ -98,14 +111,21 @@ export default defineEventHandler(async (event) => {
     })),
   )
 
-  const origin = getRequestURL(event).origin
+  const shortId = order!.id.slice(0, 8).toUpperCase()
+  const description = `Pedido ${shortId} - Carrasco Store`
 
   // El motor antifraude de Mercado Pago usa nombre/apellido del pagador para
   // calificar el riesgo de la transaccion; sin esto sube la tasa de rechazo.
   const fullName = (user.user_metadata as { full_name?: string } | undefined)?.full_name?.trim()
   const [payerName, ...payerSurnameParts] = fullName ? fullName.split(/\s+/) : []
+  const payerSurname = payerSurnameParts.length > 0 ? payerSurnameParts.join(' ') : null
 
+  // La Preference es OPCIONAL: solo habilita el boton "Mercado Pago Wallet"
+  // (Yape) en el Brick. Si falla, el checkout con tarjeta/debito funciona
+  // igual — simplemente no aparece esa opcion.
+  let preferenceId: string | null = null
   try {
+    const origin = getRequestURL(event).origin
     const preference = await createMpPreference({
       items: pricedItems.map(item => ({
         id: item.productId,
@@ -117,7 +137,7 @@ export default defineEventHandler(async (event) => {
       payer: {
         email: user.email!,
         name: payerName,
-        surname: payerSurnameParts.length > 0 ? payerSurnameParts.join(' ') : undefined,
+        surname: payerSurname ?? undefined,
         phone: shippingAddress?.phone ? { number: shippingAddress.phone } : undefined,
         address: shippingAddress ? { street_name: shippingAddress.line1 } : undefined,
       },
@@ -127,22 +147,26 @@ export default defineEventHandler(async (event) => {
       pendingUrl: `${origin}/checkout/pending`,
       notificationUrl: `${origin}/api/checkout/webhook`,
     })
-
-    await db.update(orders)
-      .set({ mpPreferenceId: preference.id })
-      .where(eq(orders.id, order!.id))
-
-    // El carrito NO se borra aca: se conserva hasta que el webhook confirme el
-    // pago aprobado (ver fulfillOrder en server/utils/fulfillment.ts). Si el
-    // pago falla o el usuario abandona en Mercado Pago, el carrito sigue
-    // intacto para reintentar sin perder lo seleccionado.
-    return { orderId: order!.id, initPoint: preference.init_point }
+    preferenceId = preference.id
+    await db.update(orders).set({ mpPreferenceId: preference.id }).where(eq(orders.id, order!.id))
   }
   catch {
-    // No se pudo generar la preferencia de pago (credenciales invalidas, MP caido,
-    // etc.): se descarta la orden en vez de dejarla varada en 'pending_payment'
-    // para siempre sin ninguna posibilidad de completarse.
-    await db.delete(orders).where(eq(orders.id, order!.id))
-    throw createError({ statusCode: 502, statusMessage: 'No se pudo iniciar el pago con Mercado Pago. Intenta nuevamente.' })
+    // Sin preferencia: se sigue sin la opcion de Wallet.
+  }
+
+  // El carrito NO se vacia aca: se conserva hasta que el pago quede aprobado
+  // (ver fulfillOrder). Si el pago falla o se abandona, el carrito sigue
+  // intacto para reintentar sobre esta misma orden.
+  return {
+    orderId: order!.id,
+    publicKey,
+    amount: total.toFixed(2),
+    description,
+    preferenceId,
+    payer: {
+      email: user.email,
+      firstName: payerName ?? null,
+      lastName: payerSurname,
+    },
   }
 })

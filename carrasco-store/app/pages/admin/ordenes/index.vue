@@ -69,16 +69,23 @@ const statusLabels: Record<OrderStatus, string> = {
   cancelled: 'Cancelado',
   refunded: 'Reembolsado',
 }
-// Los valores reales vienen tal cual los devuelve Mercado Pago (approved,
-// pending, in_process, rejected, cancelled, refunded, etc.); se cubren los
-// mas comunes y el resto cae al fallback (texto crudo capitalizado).
+// Valores del `status` de la Orders API de Mercado Pago (Checkout API via
+// Orders). Se cubren todos; el resto cae al fallback (texto crudo). Los cuatro
+// ultimos son del flujo Checkout Pro anterior, para ordenes viejas.
 const paymentLabels: Record<string, string> = {
+  processed: 'Aprobado',
+  failed: 'Rechazado',
+  processing: 'En proceso',
+  action_required: 'Requiere acción',
+  in_review: 'En revisión',
+  canceled: 'Cancelado',
+  charged_back: 'Contracargo',
+  expired: 'Expirado',
+  created: 'Iniciado',
   approved: 'Aprobado',
+  rejected: 'Rechazado',
   pending: 'Pendiente',
   in_process: 'En revisión',
-  rejected: 'Rechazado',
-  cancelled: 'Cancelado',
-  refunded: 'Reembolsado',
 }
 
 function paymentLabel(status: string | null) {
@@ -282,8 +289,17 @@ const filterOptions = [
   padding: 0.2rem 0.55rem;
   border-radius: 999px;
 }
+.payment-badge.is-processed,
 .payment-badge.is-approved { background: var(--color-physical-tint); color: var(--color-physical-ink); }
+.payment-badge.is-processing,
+.payment-badge.is-action_required,
+.payment-badge.is-in_review,
+.payment-badge.is-created,
 .payment-badge.is-pending { background: var(--color-service-tint); color: var(--color-service-ink); }
+.payment-badge.is-failed,
+.payment-badge.is-canceled,
+.payment-badge.is-charged_back,
+.payment-badge.is-expired,
 .payment-badge.is-rejected { background: var(--color-danger-tint); color: var(--color-danger); }
 
 .status-badge {

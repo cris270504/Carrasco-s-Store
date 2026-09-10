@@ -159,12 +159,38 @@ export const orders = pgTable('orders', {
   shippingCost: decimal('shipping_cost', { precision: 10, scale: 2 }).notNull().default('0'),
   total: decimal('total', { precision: 10, scale: 2 }).notNull(),
   shippingAddressId: uuid('shipping_address_id').references(() => addresses.id),
+  // Checkout API via Orders: mpOrderId es el id del recurso /v1/orders (ej.
+  // "ORD01..."), mpPaymentId el id del cobro subyacente
+  // (transactions.payments[0].id, util para conciliacion/reembolsos), y
+  // mpPreferenceId solo se llena si se pudo crear una Preference para
+  // habilitar el boton "Mercado Pago Wallet" (Yape) en el Brick.
+  mpOrderId: varchar('mp_order_id', { length: 100 }),
   mpPaymentId: varchar('mp_payment_id', { length: 100 }),
   mpPreferenceId: varchar('mp_preference_id', { length: 100 }),
+  // Estado de la ORDEN segun la Orders API (processed | failed | processing |
+  // action_required | in_review | canceled | charged_back | expired |
+  // created), NO los de la API de Pagos clasica. Solo informativo/para el
+  // panel admin: orders.status se mueve unicamente cuando el pago queda
+  // 'processed' (ver fulfillOrder).
   paymentStatus: varchar('payment_status', { length: 50 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => ({
   userIdx: index('orders_user_idx').on(table.userId),
+})).enableRLS()
+
+// Evidencia de posibles cobros duplicados: si llega una segunda confirmacion
+// de pago (id de pago distinto) para una orden que ya no admite cobro, se
+// registra aca para revision manual en vez de descartarla en silencio.
+export const paymentReviewFlags = pgTable('payment_review_flags', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  orderId: uuid('order_id').notNull().references(() => orders.id, { onDelete: 'cascade' }),
+  mpOrderId: varchar('mp_order_id', { length: 100 }),
+  mpPaymentId: varchar('mp_payment_id', { length: 100 }),
+  reason: text('reason').notNull(),
+  resolved: boolean('resolved').notNull().default(false),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  orderIdx: index('payment_review_flags_order_idx').on(table.orderId),
 })).enableRLS()
  
 export const orderItems = pgTable('order_items', {

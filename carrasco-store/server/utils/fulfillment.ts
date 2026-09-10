@@ -7,6 +7,7 @@ import {
   digitalLicenses,
   orderItems,
   orders,
+  paymentReviewFlags,
   productVariants,
   products,
   serviceBookings,
@@ -15,18 +16,38 @@ import {
 
 type OrderItem = typeof orderItems.$inferSelect
 
-// Se dispara desde el webhook de Mercado Pago cuando el pago queda 'approved'.
-// El UPDATE...WHERE status='pending_payment' es atomico: si dos notificaciones
-// llegan casi simultaneas para la misma orden, solo una consigue la fila (evita
-// duplicar descuento de stock / entrega de licencia / creacion de booking).
-export async function fulfillOrder(event: H3Event, orderId: string) {
+interface MpPaymentInfo {
+  mpOrderId?: string | null
+  mpPaymentId?: string | null
+}
+
+// Aplica un pago APROBADO ('processed' en Orders API) a la orden: descuenta
+// stock, entrega licencias, crea bookings y vacia el carrito. La llaman tanto
+// el paso sincrono "confirmar pago" (server/api/checkout/confirm.post.ts) como
+// el webhook asincrono — cualquiera que llegue primero deja todo consistente.
+//
+// El UPDATE...WHERE status='pending_payment' es atomico y tambien graba los
+// ids de Mercado Pago en la MISMA sentencia: si dos llamadas (confirm +
+// webhook, o dos notificaciones) corren casi juntas, solo una consigue la
+// fila; la otra ve claimed vacio y sale sin efectos (no duplica stock /
+// licencia / booking / cobro).
+export async function fulfillOrder(event: H3Event, orderId: string, mp: MpPaymentInfo = {}) {
   const claimed = await db.update(orders)
-    .set({ status: 'processing' })
+    .set({
+      status: 'processing',
+      paymentStatus: 'processed',
+      ...(mp.mpOrderId ? { mpOrderId: mp.mpOrderId } : {}),
+      ...(mp.mpPaymentId ? { mpPaymentId: mp.mpPaymentId } : {}),
+    })
     .where(and(eq(orders.id, orderId), eq(orders.status, 'pending_payment')))
     .returning()
 
   const order = claimed[0]
   if (!order) {
+    // No se pudo reclamar: la orden ya esta en fulfillment o pagada. Suele ser
+    // la segunda llegada normal (confirm + webhook del mismo cobro); pero si
+    // trae un id de pago DISTINTO al ya registrado, es un posible doble cobro.
+    await flagPossibleDoublePayment(orderId, mp)
     return
   }
 
@@ -48,7 +69,7 @@ export async function fulfillOrder(event: H3Event, orderId: string) {
     await db.update(orders).set({ status: 'paid' }).where(eq(orders.id, orderId))
 
     // Recien aca se vacia el carrito: si el pago hubiera fallado, el usuario
-    // conserva lo seleccionado para reintentar (ver server/api/checkout/index.post.ts).
+    // conserva lo seleccionado para reintentar (ver server/api/checkout/init.post.ts).
     const cart = await db.query.carts.findFirst({ where: eq(carts.userId, order.userId) })
     if (cart) {
       await db.delete(cartItems).where(eq(cartItems.cartId, cart.id))
@@ -60,6 +81,33 @@ export async function fulfillOrder(event: H3Event, orderId: string) {
     await db.update(orders).set({ status: 'pending_payment' }).where(eq(orders.id, orderId))
     throw err
   }
+}
+
+// Se llama cuando fulfillOrder no pudo reclamar la orden (ya no esta en
+// 'pending_payment'). Si el id de pago que llega es el mismo ya registrado, es
+// solo la segunda notificacion del mismo cobro y no hay nada que hacer. Si es
+// distinto, quedo un cobro extra sin aplicar: se deja constancia en
+// payment_review_flags para revision manual en vez de perderlo.
+async function flagPossibleDoublePayment(orderId: string, mp: MpPaymentInfo) {
+  if (!mp.mpPaymentId) return
+
+  const current = await db.query.orders.findFirst({
+    where: eq(orders.id, orderId),
+    columns: { mpPaymentId: true, status: true },
+  })
+  if (!current || current.mpPaymentId === mp.mpPaymentId) return
+
+  await db.insert(paymentReviewFlags).values({
+    orderId,
+    mpOrderId: mp.mpOrderId ?? null,
+    mpPaymentId: mp.mpPaymentId,
+    reason: `Segundo pago (${mp.mpPaymentId}) recibido para una orden en estado "${current.status}" `
+      + `ya asociada al pago ${current.mpPaymentId ?? 'desconocido'}.`,
+  })
+  console.error(
+    `[MP] Posible doble cobro en orden ${orderId}: pago nuevo ${mp.mpPaymentId}, `
+    + `pago existente ${current.mpPaymentId ?? 'desconocido'}`,
+  )
 }
 
 // Decremento atomico: solo resta si hay stock suficiente EN LA MISMA sentencia

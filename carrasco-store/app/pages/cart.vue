@@ -9,7 +9,9 @@ interface Address {
   phone: string | null
 }
 
-const { items, removeItem, setQuantity, subtotal } = useCart()
+import type { PaymentSession } from '~/components/CheckoutPaymentModal.vue'
+
+const { items, removeItem, setQuantity, subtotal, fetchCart } = useCart()
 const { settings, fetchSettings } = useStoreSettings()
 const user = useSupabaseUser()
 
@@ -55,6 +57,19 @@ const checkingOut = ref(false)
 const checkoutError = ref('')
 const addressErrors = reactive({ fullName: '', line1: '', city: '' })
 
+// Pago embebido (Payment Brick): /api/checkout/init crea la orden y devuelve
+// lo que necesita el Brick; el modal maneja el cobro contra /api/checkout/confirm.
+const paymentSession = ref<PaymentSession | null>(null)
+const paymentModalOpen = ref(false)
+
+async function onPaid() {
+  paymentModalOpen.value = false
+  // El carrito ya fue vaciado en el servidor al aprobarse el pago; se refresca
+  // el estado local antes de salir.
+  await fetchCart()
+  await navigateTo('/checkout/success')
+}
+
 function validateAddress() {
   addressErrors.fullName = addressForm.fullName.trim() ? '' : 'Ingresa tu nombre completo.'
   addressErrors.line1 = addressForm.line1.trim() ? '' : 'Ingresa la dirección.'
@@ -89,11 +104,11 @@ async function handleCheckout() {
       addressId = address.id
     }
 
-    const { initPoint } = await $fetch<{ orderId: string, initPoint: string }>('/api/checkout', {
+    paymentSession.value = await $fetch<PaymentSession>('/api/checkout/init', {
       method: 'POST',
       body: hasPhysicalItem.value ? { addressId } : undefined,
     })
-    await navigateTo(initPoint, { external: true })
+    paymentModalOpen.value = true
   }
   catch (err) {
     checkoutError.value = (err as { data?: { statusMessage?: string } })?.data?.statusMessage
@@ -253,12 +268,19 @@ async function handleCheckout() {
           :disabled="checkingOut"
           @click="handleCheckout"
         >
-          {{ checkingOut ? 'Redirigiendo…' : 'Continuar al pago' }}
+          {{ checkingOut ? 'Preparando pago…' : 'Continuar al pago' }}
         </button>
         <p class="cart-summary__trust">🔒 Pago seguro procesado con Mercado Pago</p>
         <NuxtLink to="/catalogo" class="cart-summary__continue">Seguir comprando</NuxtLink>
       </aside>
     </div>
+
+    <CheckoutPaymentModal
+      :open="paymentModalOpen"
+      :session="paymentSession"
+      @close="paymentModalOpen = false"
+      @paid="onPaid"
+    />
   </div>
 </template>
 
