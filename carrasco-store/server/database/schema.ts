@@ -45,6 +45,14 @@ export const products = pgTable('products', {
   description: text('description'),
   brand: varchar('brand', { length: 120 }),
   price: decimal('price', { precision: 10, scale: 2 }).notNull(),
+  // Costo de adquisicion vigente (lo que Carrasco Store paga al proveedor).
+  // Nullable: los servicios y productos sin costo cargado quedan en null y
+  // cuentan como costo 0 en el margen. Se snapshotea en order_items.unitCost /
+  // manual_sales.unitCost al concretar cada venta para que el margen
+  // historico no cambie si despues se actualiza este valor.
+  costPrice: decimal('cost_price', { precision: 10, scale: 2 }),
+  supplierId: uuid('supplier_id').references(() => suppliers.id),
+  costUpdatedAt: timestamp('cost_updated_at'),
   type: itemTypeEnum('type').notNull().default('physical'),
   stock: integer('stock').default(0), // solo aplica a physical (variantId null)
   requiresShipping: boolean('requires_shipping').default(true),
@@ -93,6 +101,16 @@ export const serviceDetails = pgTable('service_details', {
   defaultModality: bookingModalityEnum('default_modality').notNull().default('remote'),
 }).enableRLS()
  
+// ============================================================
+// PROVEEDORES Y COSTOS
+// ============================================================
+export const suppliers = pgTable('suppliers', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  name: varchar('name', { length: 160 }).notNull().unique(),
+  notes: text('notes'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}).enableRLS()
+
 // ============================================================
 // USUARIOS Y DIRECCIONES
 // (userId referencia auth.users de Supabase; sin FK física por vivir en otro schema)
@@ -164,6 +182,10 @@ export const orders = pgTable('orders', {
   // (transactions.payments[0].id, util para conciliacion/reembolsos), y
   // mpPreferenceId solo se llena si se pudo crear una Preference para
   // habilitar el boton "Mercado Pago Wallet" (Yape) en el Brick.
+  // Telefono opcional del comprador para el aviso de compra por WhatsApp
+  // (los pedidos con envio fisico ya tienen el de la direccion; este cubre
+  // los digitales/servicios).
+  buyerPhone: varchar('buyer_phone', { length: 30 }),
   mpOrderId: varchar('mp_order_id', { length: 100 }),
   mpPaymentId: varchar('mp_payment_id', { length: 100 }),
   mpPreferenceId: varchar('mp_preference_id', { length: 100 }),
@@ -201,6 +223,10 @@ export const orderItems = pgTable('order_items', {
   itemType: itemTypeEnum('item_type').notNull(),
   quantity: integer('quantity').notNull().default(1),
   unitPrice: decimal('unit_price', { precision: 10, scale: 2 }).notNull(),
+  // Costo unitario congelado en el momento del pago (copiado de
+  // products.costPrice por fulfillOrder). Nullable para ordenes previas a
+  // esta funcion; se toma como 0 en el calculo de margen.
+  unitCost: decimal('unit_cost', { precision: 10, scale: 2 }),
   digitalLicenseId: uuid('digital_license_id').references(() => digitalLicenses.id),
 }, (table) => ({
   // fulfillOrder busca por orderId en cada webhook aprobado; productHasSales
@@ -220,6 +246,36 @@ export const serviceBookings = pgTable('service_bookings', {
   status: bookingStatusEnum('status').notNull().default('pending'),
   notes: text('notes'),
 }).enableRLS()
+
+// ============================================================
+// VENTAS PARTICULARES (fuera de la tienda)
+// Registro manual de ventas hechas por WhatsApp, presencial, etc. Alimentan
+// el dashboard de finanzas junto con las ordenes de la tienda. productId es
+// opcional: se puede vender algo que no esta en el catalogo (description
+// libre). unitCost se snapshotea al registrar (del producto o a mano).
+// ============================================================
+export const manualSaleChannelEnum = pgEnum('manual_sale_channel', [
+  'whatsapp', 'presencial', 'redes', 'otro',
+])
+
+export const manualSales = pgTable('manual_sales', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  productId: uuid('product_id').references(() => products.id),
+  description: varchar('description', { length: 255 }).notNull(),
+  supplierId: uuid('supplier_id').references(() => suppliers.id),
+  customerName: varchar('customer_name', { length: 200 }),
+  quantity: integer('quantity').notNull().default(1),
+  unitPrice: decimal('unit_price', { precision: 10, scale: 2 }).notNull(),
+  unitCost: decimal('unit_cost', { precision: 10, scale: 2 }).notNull().default('0'),
+  channel: manualSaleChannelEnum('channel').notNull().default('whatsapp'),
+  notes: text('notes'),
+  soldAt: timestamp('sold_at').notNull().defaultNow(),
+  createdBy: uuid('created_by').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  soldAtIdx: index('manual_sales_sold_at_idx').on(table.soldAt),
+  productIdx: index('manual_sales_product_idx').on(table.productId),
+})).enableRLS()
 
 // ============================================================
 // FAVORITOS
@@ -250,9 +306,20 @@ export const storeSettings = pgTable('store_settings', {
 // ============================================================
 export const productsRelations = relations(products, ({ one, many }) => ({
   category: one(categories, { fields: [products.categoryId], references: [categories.id] }),
+  supplier: one(suppliers, { fields: [products.supplierId], references: [suppliers.id] }),
   variants: many(productVariants),
   licenses: many(digitalLicenses),
   serviceDetail: one(serviceDetails, { fields: [products.id], references: [serviceDetails.productId] }),
+}))
+
+export const suppliersRelations = relations(suppliers, ({ many }) => ({
+  products: many(products),
+  manualSales: many(manualSales),
+}))
+
+export const manualSalesRelations = relations(manualSales, ({ one }) => ({
+  product: one(products, { fields: [manualSales.productId], references: [products.id] }),
+  supplier: one(suppliers, { fields: [manualSales.supplierId], references: [suppliers.id] }),
 }))
  
 export const cartsRelations = relations(carts, ({ many }) => ({
