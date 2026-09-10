@@ -16,6 +16,7 @@ useSeoMeta({
     <AppFooter />
     <ClientOnly>
       <WelcomeModal />
+      <WhatsappFloat />
     </ClientOnly>
   </div>
 </template>

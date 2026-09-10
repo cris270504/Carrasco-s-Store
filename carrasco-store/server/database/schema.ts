@@ -298,6 +298,17 @@ export const favorites = pgTable('favorites', {
 export const storeSettings = pgTable('store_settings', {
   id: integer('id').primaryKey().default(1),
   shippingFlatRate: decimal('shipping_flat_rate', { precision: 10, scale: 2 }).notNull().default('15'),
+  // Numero para el boton flotante de WhatsApp de la tienda (link wa.me, NO la
+  // Cloud API de avisos). Digitos en formato internacional sin '+', ej.
+  // 51999888777. Vacio = el boton no se muestra.
+  whatsappNumber: varchar('whatsapp_number', { length: 30 }),
+  whatsappCta: varchar('whatsapp_cta', { length: 200 }),
+  // Contador de ofertas del home: si offerCountdownEndsAt esta en el futuro se
+  // muestra la banda; al vencer se oculta sola. Con timezone porque es un
+  // instante absoluto que fija el admin (a diferencia de los createdAt).
+  offerCountdownEndsAt: timestamp('offer_countdown_ends_at', { withTimezone: true }),
+  offerCountdownTitle: varchar('offer_countdown_title', { length: 120 }),
+  offerCountdownUrl: varchar('offer_countdown_url', { length: 255 }),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }).enableRLS()
 

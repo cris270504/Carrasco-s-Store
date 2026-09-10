@@ -152,6 +152,10 @@ const heroFloaters = [
       </div>
     </section>
 
+    <ClientOnly>
+      <OfferCountdown />
+    </ClientOnly>
+
     <section v-if="featuredProducts?.length" class="featured">
       <header class="section-header">
         <p class="section-header__eyebrow">Recién agregados</p>

@@ -1,5 +1,10 @@
 export interface StoreSettings {
   shippingFlatRate: number
+  whatsappNumber: string | null
+  whatsappCta: string | null
+  offerCountdownEndsAt: string | null
+  offerCountdownTitle: string | null
+  offerCountdownUrl: string | null
   updatedAt: string | null
 }
 
@@ -21,5 +26,11 @@ export function useStoreSettings() {
     }
   }
 
-  return { settings, loading, fetchSettings }
+  // Carga una sola vez por request/navegacion si aun no hay datos.
+  async function ensureSettings() {
+    if (settings.value || loading.value) return
+    await fetchSettings()
+  }
+
+  return { settings, loading, fetchSettings, ensureSettings }
 }
