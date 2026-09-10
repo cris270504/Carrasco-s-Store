@@ -113,29 +113,31 @@ async function handleDelete(product: AdminProductListItem) {
               {{ product.isActive ? 'Activo' : 'Inactivo' }}
               <span v-if="product.hasSales" class="sales-badge" title="Tiene ventas registradas">Con ventas</span>
             </td>
-            <td class="products-page__actions">
-              <NuxtLink :to="`/admin/productos/${product.id}/editar`" class="icon-btn" aria-label="Editar">
-                <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
-                  <path d="M13.5 3.5 16.5 6.5 6.5 16.5H3.5V13.5L13.5 3.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" />
-                </svg>
-              </NuxtLink>
-              <button
-                type="button"
-                class="icon-btn is-danger"
-                :aria-label="product.hasSales ? 'Desactivar' : 'Eliminar'"
-                :title="product.hasSales ? 'Desactivar (tiene ventas registradas)' : 'Eliminar permanentemente'"
-                :disabled="deletingId === product.id"
-                @click="handleDelete(product)"
-              >
-                <svg v-if="product.hasSales" width="15" height="15" viewBox="0 0 20 20" fill="none">
-                  <path d="M2 10C3.5 6.5 6.5 4.5 10 4.5s6.5 2 8 5.5c-1.5 3.5-4.5 5.5-8 5.5s-6.5-2-8-5.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" />
-                  <circle cx="10" cy="10" r="2.2" stroke="currentColor" stroke-width="1.4" />
-                  <path d="M3.5 3.5l13 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
-                </svg>
-                <svg v-else width="15" height="15" viewBox="0 0 20 20" fill="none">
-                  <path d="M4 6h12M8 6V4h4v2M6 6l.6 10h6.8L14 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-              </button>
+            <td class="products-page__actions-cell">
+              <div class="products-page__actions">
+                <NuxtLink :to="`/admin/productos/${product.id}/editar`" class="icon-btn" aria-label="Editar">
+                  <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
+                    <path d="M13.5 3.5 16.5 6.5 6.5 16.5H3.5V13.5L13.5 3.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" />
+                  </svg>
+                </NuxtLink>
+                <button
+                  type="button"
+                  class="icon-btn is-danger"
+                  :aria-label="product.hasSales ? 'Desactivar' : 'Eliminar'"
+                  :title="product.hasSales ? 'Desactivar (tiene ventas registradas)' : 'Eliminar permanentemente'"
+                  :disabled="deletingId === product.id"
+                  @click="handleDelete(product)"
+                >
+                  <svg v-if="product.hasSales" width="15" height="15" viewBox="0 0 20 20" fill="none">
+                    <path d="M2 10C3.5 6.5 6.5 4.5 10 4.5s6.5 2 8 5.5c-1.5 3.5-4.5 5.5-8 5.5s-6.5-2-8-5.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" />
+                    <circle cx="10" cy="10" r="2.2" stroke="currentColor" stroke-width="1.4" />
+                    <path d="M3.5 3.5l13 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+                  </svg>
+                  <svg v-else width="15" height="15" viewBox="0 0 20 20" fill="none">
+                    <path d="M4 6h12M8 6V4h4v2M6 6l.6 10h6.8L14 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </button>
+              </div>
             </td>
           </tr>
           <tr v-if="filtered.length === 0">
@@ -233,6 +235,7 @@ async function handleDelete(product: AdminProductListItem) {
   padding: 0.75rem 0.6rem;
   border-bottom: 1px solid var(--color-border);
   white-space: nowrap;
+  vertical-align: middle;
 }
 .admin-table tr:last-child td {
   border-bottom: none;
@@ -267,9 +270,17 @@ async function handleDelete(product: AdminProductListItem) {
   color: var(--color-ink-muted);
   padding: 2rem;
 }
+/* La celda de acciones se mantiene como celda de tabla normal (sin flex en el
+   td, que rompe el layout de columnas y desalinea los botones entre filas);
+   el flex va en el wrapper interno. */
+.products-page__actions-cell {
+  width: 1%;
+  text-align: right;
+}
 .products-page__actions {
-  display: flex;
+  display: inline-flex;
   gap: 0.4rem;
+  justify-content: flex-end;
 }
 
 .type-badge {
@@ -311,13 +322,18 @@ async function handleDelete(product: AdminProductListItem) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
   border-radius: var(--radius-control);
   border: 1px solid var(--color-border-strong);
   background: transparent;
   color: var(--color-ink-muted);
   cursor: pointer;
+}
+.icon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 .icon-btn:hover {
   border-color: var(--color-accent);
