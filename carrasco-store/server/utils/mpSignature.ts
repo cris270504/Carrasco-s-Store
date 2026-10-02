@@ -9,7 +9,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 // MP_WEBHOOK_SECRET falta, se falla CERRADO (se rechaza la notificacion) en
 // vez de aceptar cualquier payload sin autenticar.
 export function verifyMpWebhookSignature(event: H3Event, dataId: string): boolean {
-  const secret = process.env.MP_WEBHOOK_SECRET
+  const secret = useRuntimeConfig(event).mpWebhookSecret
   if (!secret) {
     console.error('[MP] MP_WEBHOOK_SECRET no configurada: se rechaza el webhook (fail-closed)')
     return false

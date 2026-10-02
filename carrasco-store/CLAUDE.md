@@ -53,7 +53,7 @@ Requires `DATABASE_URL` (Postgres/Supabase connection string), `SUPABASE_URL`, a
 
 **Filters/query pattern**: `app/composables/useProductFilters.ts` shows the established pattern for list filtering — a reactive filters object synced two-way with the route query string (so searches are shareable/bookmarkable), passed straight into `useFetch('/api/products', { query: filters })`. Follow this pattern for any new filterable list rather than introducing separate client-side filter state.
 
-The codebase is early-stage: cart/checkout/order endpoints, product detail pages, and the digital license encryption step are not yet implemented (see `TODO` markers, e.g. in `app/pages/catalogo/index.vue`).
+Cart/checkout/order endpoints are implemented: `server/api/cart/**` (cart CRUD), `server/api/checkout/**` (Mercado Pago Checkout API via Orders/Payment Brick — `init`, `confirm`, `webhook`), and `server/api/orders/**`. Product detail pages also exist (`app/pages/producto/[slug].vue`). Check remaining `TODO` markers in the codebase before assuming a given piece is still pending.
 
 # Reglas del Proyecto: Carrasco Store
 

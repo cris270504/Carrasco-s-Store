@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { products, suppliers } from '../../../database/schema'
+import { products } from '../../../database/schema'
 
 // Edicion rapida de la fila de costos de un producto: precio de venta, costo
 // de compra y proveedor. Cambiar el costo actualiza cost_updated_at.
@@ -15,37 +15,18 @@ export default defineEventHandler(async (event) => {
   const updates: Partial<typeof products.$inferInsert> = {}
 
   if (body?.price !== undefined) {
-    const price = Number(body.price)
-    if (!Number.isFinite(price) || price <= 0) {
-      throw createError({ statusCode: 400, statusMessage: 'El precio de venta debe ser mayor a 0' })
-    }
-    updates.price = price.toFixed(2)
+    updates.price = parsePositiveAmount(body.price, 'El precio de venta debe ser mayor a 0').toFixed(2)
   }
 
   if ('costPrice' in (body ?? {})) {
-    if (body.costPrice === null || body.costPrice === '') {
-      updates.costPrice = null
-    }
-    else {
-      const cost = Number(body.costPrice)
-      if (!Number.isFinite(cost) || cost < 0) {
-        throw createError({ statusCode: 400, statusMessage: 'El costo de compra no puede ser negativo' })
-      }
-      updates.costPrice = cost.toFixed(2)
-    }
+    updates.costPrice = (body.costPrice === null || body.costPrice === '')
+      ? null
+      : parseNonNegativeAmount(body.costPrice, 'El costo de compra no puede ser negativo').toFixed(2)
     updates.costUpdatedAt = new Date()
   }
 
   if ('supplierId' in (body ?? {})) {
-    if (!body.supplierId) {
-      updates.supplierId = null
-    }
-    else {
-      const [supplier] = await db.select({ id: suppliers.id })
-        .from(suppliers).where(eq(suppliers.id, String(body.supplierId))).limit(1)
-      if (!supplier) throw createError({ statusCode: 400, statusMessage: 'Proveedor no válido' })
-      updates.supplierId = supplier.id
-    }
+    updates.supplierId = await resolveSupplierId(body.supplierId)
   }
 
   if (Object.keys(updates).length === 0) {

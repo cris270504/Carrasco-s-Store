@@ -1,16 +1,23 @@
 import { eq, inArray } from 'drizzle-orm'
-import { orderItems } from '../database/schema'
+import { manualSales, orderItems } from '../database/schema'
 
-// Un producto "tiene ventas" si aparece en al menos un order_items. Fuente
-// unica de verdad: tanto el listado admin (que anticipa en la UI si el boton
-// va a desactivar o eliminar) como el DELETE (que decide de verdad) deben
+// Un producto "tiene ventas" si aparece en al menos un order_items o en al
+// menos un manual_sales (venta particular registrada a mano). Fuente unica
+// de verdad: tanto el listado admin (que anticipa en la UI si el boton va a
+// desactivar o eliminar) como el DELETE (que decide de verdad) deben
 // responder siempre lo mismo a esta pregunta.
 export async function productHasSales(productId: string): Promise<boolean> {
-  const sale = await db.query.orderItems.findFirst({
-    where: eq(orderItems.productId, productId),
-    columns: { id: true },
-  })
-  return !!sale
+  const [orderSale, manualSale] = await Promise.all([
+    db.query.orderItems.findFirst({
+      where: eq(orderItems.productId, productId),
+      columns: { id: true },
+    }),
+    db.query.manualSales.findFirst({
+      where: eq(manualSales.productId, productId),
+      columns: { id: true },
+    }),
+  ])
+  return !!orderSale || !!manualSale
 }
 
 export async function productsWithSales(productIds: string[]): Promise<Set<string>> {

@@ -18,7 +18,10 @@ export default defineEventHandler(async (event) => {
     const [row] = await db.insert(suppliers).values({ name, notes }).returning()
     return row
   }
-  catch {
-    throw createError({ statusCode: 409, statusMessage: 'Ya existe un proveedor con ese nombre' })
+  catch (err) {
+    if ((err as { code?: string })?.code === '23505') {
+      throw createError({ statusCode: 409, statusMessage: 'Ya existe un proveedor con ese nombre' })
+    }
+    throw createError({ statusCode: 500, statusMessage: 'No se pudo crear el proveedor' })
   }
 })

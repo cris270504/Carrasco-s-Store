@@ -1,5 +1,6 @@
 import { asc } from 'drizzle-orm'
 import { products } from '../../../database/schema'
+import { calculateMargin } from '../../../../shared/utils/margin'
 
 // Tabla PRODUCTO | PRECIO DE COMPRA | PROVEEDOR | PRECIO DE VENTA | GANANCIA
 // que el equipo mantiene. Trae todos los productos (activos e inactivos).
@@ -34,7 +35,7 @@ export default defineEventHandler(async (event) => {
       supplier: p.supplier ?? null,
       costUpdatedAt: p.costUpdatedAt,
       // GANANCIA = venta - compra (null si no hay costo cargado)
-      margin: cost === null ? null : Math.round((price - cost) * 100) / 100,
+      margin: cost === null ? null : calculateMargin(price, cost, 1),
       marginPct: cost !== null && price > 0
         ? Math.round(((price - cost) / price) * 100)
         : null,

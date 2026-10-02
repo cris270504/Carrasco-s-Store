@@ -8,7 +8,7 @@ const MP_API_BASE = 'https://api.mercadopago.com'
 export const MP_MIN_AMOUNT_PEN = 10
 
 function getAccessToken() {
-  const token = process.env.MP_ACCESS_TOKEN
+  const token = useRuntimeConfig().mpAccessToken
   if (!token) {
     throw createError({
       statusCode: 500,
@@ -22,7 +22,7 @@ function getAccessToken() {
 // No es secreta, pero se entrega desde el backend (en la respuesta de /init)
 // en vez de exponerla por runtimeConfig para no tenerla hardcodeada en el bundle.
 export function getMpPublicKey() {
-  const key = process.env.MP_PUBLIC_KEY
+  const key = useRuntimeConfig().mpPublicKey
   if (!key) {
     throw createError({
       statusCode: 500,
@@ -192,6 +192,20 @@ export async function getMpOrder(orderId: string): Promise<MpOrder> {
   return $fetch<MpOrder>(`${MP_API_BASE}/v1/orders/${orderId}`, {
     headers: { Authorization: `Bearer ${token}` },
   })
+}
+
+// Busca un pedido en MP por external_reference (nuestro orders.id) para el
+// caso en que el proceso se cayo entre el claim atomico y la persistencia del
+// mpOrderId (ver server/api/admin/orders/[id]/reconcile.post.ts). Si el
+// endpoint de busqueda no responde como se espera, el catch del caller trata
+// esto como "no encontrado" en vez de romper.
+export async function findMpOrderByExternalReference(externalReference: string): Promise<MpOrder | null> {
+  const token = getAccessToken()
+  const result = await $fetch<{ elements?: MpOrder[] }>(`${MP_API_BASE}/v1/orders/search`, {
+    query: { external_reference: externalReference },
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  return result.elements?.[0] ?? null
 }
 
 // Extrae el mensaje de error de una respuesta fallida de /v1/orders.

@@ -24,12 +24,23 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Datos de pago incompletos' })
   }
 
-  const order = await db.query.orders.findFirst({ where: eq(orders.id, orderId) })
-  if (!order || order.userId !== user.sub) {
+  const existing = await db.query.orders.findFirst({ where: eq(orders.id, orderId) })
+  if (!existing || existing.userId !== user.sub) {
     throw createError({ statusCode: 404, statusMessage: 'Orden no encontrada' })
   }
-  if (order.status !== 'pending_payment') {
-    // Ya pagada / en fulfillment / cancelada: no se vuelve a cobrar.
+
+  // Reclamo atomico (mismo patron que fulfillOrder en server/utils/fulfillment.ts):
+  // el UPDATE...WHERE status='pending_payment' es la unica fuente de verdad de
+  // que esta llamada es la que va a cobrar. Si dos confirmaciones llegan casi
+  // juntas (doble click, reintento de red) solo una consigue la fila; la otra
+  // ve claimed vacio y sale sin llamar a createMpOrder (sin doble cobro).
+  const claimed = await db.update(orders)
+    .set({ status: 'payment_in_progress' })
+    .where(and(eq(orders.id, orderId), eq(orders.status, 'pending_payment')))
+    .returning()
+
+  const order = claimed[0]
+  if (!order) {
     throw createError({ statusCode: 409, statusMessage: 'Esta orden ya no admite pagos' })
   }
 
@@ -65,7 +76,11 @@ export default defineEventHandler(async (event) => {
     })
   }
   catch (err) {
-    // Error de validacion de la Orders API (token vencido, monto invalido...).
+    // Error de validacion de la Orders API (token vencido, monto invalido...):
+    // no hubo cobro, se libera el reclamo para que el comprador pueda reintentar.
+    await db.update(orders)
+      .set({ status: 'pending_payment' })
+      .where(and(eq(orders.id, order.id), eq(orders.status, 'payment_in_progress')))
     throw createError({ statusCode: 400, statusMessage: extractMpOrderError(err) })
   }
 
@@ -82,13 +97,16 @@ export default defineEventHandler(async (event) => {
     return { status: 'processed', orderId: order.id }
   }
 
-  // No aprobado: se refleja el estado real en paymentStatus pero NO se toca
-  // orders.status — la orden sigue en 'pending_payment' para que el comprador
-  // reintente sobre la MISMA orden desde el Brick. (Con Checkout Pro un rechazo
-  // cancelaba la orden; embebido, se reintenta en el sitio.)
+  // No aprobado: se refleja el estado real en paymentStatus y se libera el
+  // reclamo volviendo a 'pending_payment' para que el comprador reintente
+  // sobre la MISMA orden desde el Brick. (Con Checkout Pro un rechazo
+  // cancelaba la orden; embebido, se reintenta en el sitio.) Si el pago quedo
+  // en un estado asincrono (processing/action_required/in_review) y nunca
+  // llega el webhook, un admin puede reconciliarla manualmente
+  // (server/api/admin/orders/[id]/reconcile.post.ts).
   await db.update(orders)
-    .set({ mpOrderId: mpOrder.id, mpPaymentId: paymentId, paymentStatus: mpOrder.status })
-    .where(and(eq(orders.id, order.id), eq(orders.status, 'pending_payment')))
+    .set({ status: 'pending_payment', mpOrderId: mpOrder.id, mpPaymentId: paymentId, paymentStatus: mpOrder.status })
+    .where(and(eq(orders.id, order.id), eq(orders.status, 'payment_in_progress')))
 
   if (mpOrder.status === 'failed') {
     return { status: 'failed', orderId: order.id, detail: payment?.status_detail ?? null }

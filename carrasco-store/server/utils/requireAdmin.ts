@@ -7,7 +7,7 @@ import { serverSupabaseUser } from '#supabase/server'
 export async function requireAdmin(event: H3Event) {
   const user = await serverSupabaseUser(event).catch(() => null)
 
-  const adminEmails = (process.env.ADMIN_EMAILS || '')
+  const adminEmails = (useRuntimeConfig(event).adminEmails || '')
     .split(',')
     .map(entry => entry.trim().toLowerCase())
     .filter(Boolean)

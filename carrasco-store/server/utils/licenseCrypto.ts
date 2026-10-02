@@ -3,7 +3,7 @@ import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto'
 const ALGO = 'aes-256-gcm'
 
 function getKey(): Buffer {
-  const secret = process.env.LICENSE_ENCRYPTION_KEY
+  const secret = useRuntimeConfig().licenseEncryptionKey
   if (!secret) {
     throw new Error('LICENSE_ENCRYPTION_KEY no esta configurada')
   }

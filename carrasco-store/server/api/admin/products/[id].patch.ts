@@ -32,11 +32,7 @@ export default defineEventHandler(async (event) => {
 
   let price = existing.price
   if (body.price !== undefined) {
-    const parsed = Number(body.price)
-    if (!Number.isFinite(parsed) || parsed <= 0) {
-      throw createError({ statusCode: 400, statusMessage: 'El precio debe ser un número mayor a 0' })
-    }
-    price = parsed.toFixed(2)
+    price = parsePositiveAmount(body.price, 'El precio debe ser un número mayor a 0').toFixed(2)
   }
 
   // El tipo del producto es inmutable tras su creación: cambiarlo dejaría

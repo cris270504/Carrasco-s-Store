@@ -24,10 +24,7 @@ export default defineEventHandler(async (event) => {
   }
   const type = body.type as 'physical' | 'digital' | 'service'
 
-  const price = Number(body.price)
-  if (!Number.isFinite(price) || price <= 0) {
-    throw createError({ statusCode: 400, statusMessage: 'El precio debe ser un número mayor a 0' })
-  }
+  const price = parsePositiveAmount(body.price, 'El precio debe ser un número mayor a 0')
 
   const variants: VariantInput[] = Array.isArray(body.variants)
     ? body.variants.filter((v: VariantInput) => v?.name?.trim() && v?.value?.trim())

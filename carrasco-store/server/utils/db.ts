@@ -2,7 +2,7 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import * as schema from '../database/schema'
 
-const client = postgres(process.env.DATABASE_URL!, {
+const client = postgres(useRuntimeConfig().databaseUrl!, {
   // Transaction pooler (puerto 6543) de Supabase: no soporta prepared statements
   prepare: false,
   // En serverless (Vercel) cada invocacion fria crea su propio pool: con

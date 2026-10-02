@@ -44,6 +44,32 @@ async function handleAddToCart(product: Product) {
     toast.error(fetchError?.data?.statusMessage || 'No se pudo agregar al carrito.')
   }
 }
+
+const catalogTypeLabels: Record<string, string> = {
+  physical: 'Productos Físicos',
+  digital: 'Licencias Digitales',
+  service: 'Servicios Técnicos',
+}
+
+const seoTitle = computed(() => {
+  const typeLabel = filters.type ? catalogTypeLabels[filters.type] : null
+  return typeLabel ? `${typeLabel} — Catálogo — Carrasco Store` : 'Catálogo — Carrasco Store'
+})
+
+const seoDescription = computed(() => {
+  const typeLabel = filters.type ? catalogTypeLabels[filters.type] : null
+  return typeLabel
+    ? `Explora ${typeLabel.toLowerCase()} en Carrasco Store: pago seguro y entrega según el ítem.`
+    : 'Explora productos físicos, licencias digitales y servicios técnicos en Carrasco Store, con pago seguro vía Mercado Pago.'
+})
+
+useSeoMeta({
+  title: seoTitle,
+  description: seoDescription,
+  ogTitle: seoTitle,
+  ogDescription: seoDescription,
+  ogImage: computed(() => products.value?.[0]?.images?.[0]),
+})
 </script>
 
 <template>

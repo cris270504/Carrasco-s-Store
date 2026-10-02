@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm'
-import { manualSales, products, suppliers } from '../../../database/schema'
+import { manualSales, products } from '../../../database/schema'
+import { calculateMargin } from '../../../../shared/utils/margin'
 
 const CHANNELS = ['whatsapp', 'presencial', 'redes', 'otro'] as const
 
@@ -30,26 +31,17 @@ export default defineEventHandler(async (event) => {
   }
 
   const rawPrice = body?.unitPrice ?? product?.price
-  const unitPrice = Number(rawPrice)
-  if (!Number.isFinite(unitPrice) || unitPrice <= 0) {
-    throw createError({ statusCode: 400, statusMessage: 'El precio de venta debe ser mayor a 0' })
-  }
+  const unitPrice = parsePositiveAmount(rawPrice, 'El precio de venta debe ser mayor a 0')
 
   const rawCost = body?.unitCost ?? product?.costPrice ?? 0
-  const unitCost = Number(rawCost)
-  if (!Number.isFinite(unitCost) || unitCost < 0) {
-    throw createError({ statusCode: 400, statusMessage: 'El costo no puede ser negativo' })
-  }
+  const unitCost = parseNonNegativeAmount(rawCost, 'El costo no puede ser negativo')
 
-  const channel = CHANNELS.includes(body?.channel) ? body.channel : 'whatsapp'
-
-  let supplierId: string | null = null
-  if (body?.supplierId) {
-    const [s] = await db.select({ id: suppliers.id })
-      .from(suppliers).where(eq(suppliers.id, String(body.supplierId))).limit(1)
-    if (!s) throw createError({ statusCode: 400, statusMessage: 'Proveedor no válido' })
-    supplierId = s.id
+  if (!CHANNELS.includes(body?.channel)) {
+    throw createError({ statusCode: 400, statusMessage: 'Canal de venta inválido' })
   }
+  const channel = body.channel
+
+  const supplierId = await resolveSupplierId(body?.supplierId)
 
   let soldAt = new Date()
   if (typeof body?.soldAt === 'string' && body.soldAt) {
@@ -76,7 +68,7 @@ export default defineEventHandler(async (event) => {
     kind: 'manual',
     title: `${quantity}× ${description}`,
     total: Math.round(unitPrice * quantity * 100) / 100,
-    profit: Math.round((unitPrice - unitCost) * quantity * 100) / 100,
+    profit: calculateMargin(unitPrice, unitCost, quantity),
     customer: row!.customerName,
     channel,
   }).catch(err => console.error('[notify] venta particular:', err))

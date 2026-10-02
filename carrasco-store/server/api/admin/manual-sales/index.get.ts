@@ -1,5 +1,6 @@
 import { and, desc, gte, lte } from 'drizzle-orm'
 import { manualSales } from '../../../database/schema'
+import { calculateMargin } from '../../../../shared/utils/margin'
 
 export default defineEventHandler(async (event) => {
   await requireAdmin(event)
@@ -39,7 +40,7 @@ export default defineEventHandler(async (event) => {
       notes: r.notes,
       soldAt: r.soldAt,
       revenue: Math.round(price * r.quantity * 100) / 100,
-      profit: Math.round((price - cost) * r.quantity * 100) / 100,
+      profit: calculateMargin(price, cost, r.quantity),
     }
   })
 })

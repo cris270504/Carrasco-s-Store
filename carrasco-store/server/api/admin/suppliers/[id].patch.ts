@@ -32,6 +32,9 @@ export default defineEventHandler(async (event) => {
   }
   catch (err) {
     if ((err as { statusCode?: number })?.statusCode) throw err
-    throw createError({ statusCode: 409, statusMessage: 'Ya existe un proveedor con ese nombre' })
+    if ((err as { code?: string })?.code === '23505') {
+      throw createError({ statusCode: 409, statusMessage: 'Ya existe un proveedor con ese nombre' })
+    }
+    throw createError({ statusCode: 500, statusMessage: 'No se pudo actualizar el proveedor' })
   }
 })
