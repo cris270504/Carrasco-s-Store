@@ -13,6 +13,8 @@ export interface PaymentSession {
 const props = defineProps<{ open: boolean, session: PaymentSession | null }>()
 const emit = defineEmits<{ close: [], paid: [orderId: string] }>()
 
+const { settings } = useStoreSettings()
+
 const CONTAINER_ID = 'mp-payment-brick'
 
 type Phase = 'form' | 'processing' | 'success' | 'failed' | 'pending'
@@ -68,6 +70,10 @@ async function mount() {
 
 async function handleSubmit(formData: BrickFormData, paymentTypeId: string | undefined) {
   if (!props.session) return
+  // Un segundo submit mientras el primero sigue en curso (doble click, o el
+  // Brick reenviando el formulario) no debe disparar un segundo $fetch:
+  // dispararia una segunda llamada a /api/checkout/confirm para la misma orden.
+  if (phase.value === 'processing') return
   phase.value = 'processing'
   message.value = ''
   try {
@@ -151,7 +157,7 @@ onBeforeUnmount(unmount)
 
           <!-- Formulario / Brick -->
           <div v-show="phase === 'form'" class="pay-body">
-            <p class="pay-amount">Total a pagar: <strong>S/ {{ session?.amount }}</strong></p>
+            <p class="pay-amount">Total a pagar: <strong>{{ formatMoney(Number(session?.amount ?? 0), settings?.currencyCode) }}</strong></p>
 
             <div class="pay-note">
               <span class="pay-note__icon" aria-hidden="true">ℹ️</span>

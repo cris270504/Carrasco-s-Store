@@ -13,7 +13,19 @@
 
 -- ------------------------------------------------------------
 -- Helper: identifica al usuario admin por email (JWT de Supabase Auth)
--- Mantener sincronizado con ADMIN_EMAILS en .env
+--
+-- ATENCION - RIESGO DE DRIFT: este array debe mantenerse sincronizado a mano
+-- con ADMIN_EMAILS en .env. No hay ninguna verificacion automatica entre
+-- ambos: si se agrega/quita un admin en .env y no se actualiza aca (o
+-- viceversa), is_admin() queda desincronizado.
+-- Por que hoy esto NO es explotable: los endpoints de server/api/** NO usan
+-- is_admin() ni dependen de RLS para autorizar al admin (ver comentario al
+-- inicio de este archivo: el backend usa DATABASE_URL con rol de servicio,
+-- que bypassea RLS). La autorizacion real del panel admin la hace
+-- server/utils/requireAdmin.ts contra ADMIN_EMAILS. is_admin() solo protege
+-- accesos DIRECTOS a la base (Supabase Studio, PostgREST, service keys mal
+-- configuradas) como defensa en profundidad, no el camino normal de la app.
+-- Un drift aca solo afecta esa capa extra, nunca la autorizacion real.
 -- ------------------------------------------------------------
 create or replace function public.is_admin()
 returns boolean
@@ -254,3 +266,40 @@ create policy "favorites_owner_insert" on public.favorites
 drop policy if exists "favorites_owner_delete" on public.favorites;
 create policy "favorites_owner_delete" on public.favorites
   for delete using (user_id = auth.uid() or is_admin());
+
+-- ============================================================
+-- 6. PROVEEDORES, COSTOS Y VENTAS PARTICULARES — gestion interna,
+-- sin cliente involucrado. Sin policy, RLS ya las deja deny-all para
+-- anon/authenticated (no es una fuga), pero se documentan explicitas
+-- y consistentes con el resto: solo admin, sin excepcion.
+-- ============================================================
+
+-- suppliers
+alter table public.suppliers enable row level security;
+
+drop policy if exists "suppliers_admin_only" on public.suppliers;
+create policy "suppliers_admin_only" on public.suppliers
+  for all using (is_admin()) with check (is_admin());
+
+-- manual_sales
+alter table public.manual_sales enable row level security;
+
+drop policy if exists "manual_sales_admin_only" on public.manual_sales;
+create policy "manual_sales_admin_only" on public.manual_sales
+  for all using (is_admin()) with check (is_admin());
+
+-- payment_review_flags
+alter table public.payment_review_flags enable row level security;
+
+drop policy if exists "payment_review_flags_admin_only" on public.payment_review_flags;
+create policy "payment_review_flags_admin_only" on public.payment_review_flags
+  for all using (is_admin()) with check (is_admin());
+
+-- message_templates: plantillas de correo editables desde el panel. Solo el
+-- servidor las lee (server/utils/resend.ts via DATABASE_URL), nunca el
+-- cliente, asi que no necesita una policy de lectura publica.
+alter table public.message_templates enable row level security;
+
+drop policy if exists "message_templates_admin_only" on public.message_templates;
+create policy "message_templates_admin_only" on public.message_templates
+  for all using (is_admin()) with check (is_admin());

@@ -23,7 +23,7 @@ export const bookingStatusEnum = pgEnum('booking_status', [
 ])
 export const bookingModalityEnum = pgEnum('booking_modality', ['remote', 'in_person'])
 export const orderStatusEnum = pgEnum('order_status', [
-  'pending_payment', 'paid', 'processing', 'shipped', 'completed', 'cancelled', 'refunded',
+  'pending_payment', 'payment_in_progress', 'paid', 'processing', 'shipped', 'completed', 'cancelled', 'refunded',
 ])
 export const licenseStatusEnum = pgEnum('license_status', ['available', 'reserved', 'delivered'])
  
@@ -309,6 +309,62 @@ export const storeSettings = pgTable('store_settings', {
   offerCountdownEndsAt: timestamp('offer_countdown_ends_at', { withTimezone: true }),
   offerCountdownTitle: varchar('offer_countdown_title', { length: 120 }),
   offerCountdownUrl: varchar('offer_countdown_url', { length: 255 }),
+
+  // ---- Marca ----
+  storeName: varchar('store_name', { length: 80 }).notNull().default('Carrasco Store'),
+  logoUrl: varchar('logo_url', { length: 500 }),
+  faviconUrl: varchar('favicon_url', { length: 500 }),
+
+  // ---- Reglas de negocio (ver shared/utils/pricing.ts para los fallbacks) ----
+  igvRate: decimal('igv_rate', { precision: 5, scale: 4 }).notNull().default('0.1800'),
+  lowStockThreshold: integer('low_stock_threshold').notNull().default(5),
+  mpMinAmount: decimal('mp_min_amount', { precision: 10, scale: 2 }).notNull().default('10'),
+  currencyCode: varchar('currency_code', { length: 3 }).notNull().default('PEN'),
+
+  // ---- Lineas de negocio activas: solo ocultan del catalogo/inicio, no
+  // bloquean ni borran productos ya creados de ese tipo. ----
+  physicalEnabled: boolean('physical_enabled').notNull().default(true),
+  digitalEnabled: boolean('digital_enabled').notNull().default(true),
+  serviceEnabled: boolean('service_enabled').notNull().default(true),
+
+  // ---- Contacto y redes (antes variables de entorno fijas) ----
+  // Lista separada por comas, mismo formato que WHATSAPP_OWNER_NUMBERS.
+  ownerWhatsappNumbers: varchar('owner_whatsapp_numbers', { length: 255 }),
+  senderEmail: varchar('sender_email', { length: 200 }),
+  facebookUrl: varchar('facebook_url', { length: 255 }),
+  instagramUrl: varchar('instagram_url', { length: 255 }),
+  tiktokUrl: varchar('tiktok_url', { length: 255 }),
+
+  // ---- Contenido del inicio (hero). El resto del home (beneficios, tipos de
+  // producto, floaters) sigue fijo en app/pages/index.vue. ----
+  homeHeroBadge: varchar('home_hero_badge', { length: 120 }),
+  homeHeroTitle: varchar('home_hero_title', { length: 200 }),
+  homeHeroSubtitle: varchar('home_hero_subtitle', { length: 400 }),
+  // Array de {icon, text} — mismo shape que `trustBadges` en index.vue.
+  homeTrustBadges: jsonb('home_trust_badges'),
+
+  // ---- Textos legales. Array de {title, body} — mismo shape que `sections`
+  // en terminos.vue/privacidad.vue. Null = usa el array hardcodeado actual. ----
+  legalTermsSections: jsonb('legal_terms_sections'),
+  legalPrivacySections: jsonb('legal_privacy_sections'),
+
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}).enableRLS()
+
+// ============================================================
+// PLANTILLAS DE CORREO
+// Fila por `key` (asunto + cuerpo con variables {{nombre}}). Si no existe fila
+// para una key, el remitente (server/utils/resend.ts) usa el texto por
+// defecto embebido en el codigo. Solo cubre los correos 100% lineales
+// (confirmacion de compra, entrega de licencia); el aviso a los duenos tiene
+// lógica condicional y se deja en codigo. El contenido de WhatsApp NO es
+// personalizable aqui: Meta exige plantillas pre-aprobadas para WhatsApp
+// Business, asi que ese texto nunca puede ser libre.
+// ============================================================
+export const messageTemplates = pgTable('message_templates', {
+  key: varchar('key', { length: 60 }).primaryKey(),
+  subject: varchar('subject', { length: 200 }).notNull(),
+  body: text('body').notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }).enableRLS()
 

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { calculateMargin } from '#shared/utils/margin'
+
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 
 interface CostRow {
@@ -20,6 +22,8 @@ const toast = useToast()
 
 const { data: rows, refresh } = await useFetch<CostRow[]>('/api/admin/costs', { default: () => [] })
 const { data: suppliers, refresh: refreshSuppliers } = await useFetch<Supplier[]>('/api/admin/suppliers', { default: () => [] })
+const { settings, ensureSettings } = useStoreSettings()
+await ensureSettings()
 
 const typeLabels = { physical: 'Físico', digital: 'Digital', service: 'Servicio' }
 
@@ -38,7 +42,7 @@ const editRows = computed(() => (rows.value ?? []).map((r) => {
   const cost = d.costPrice === '' ? null : Number(d.costPrice)
   const liveMargin = (!Number.isFinite(price) || cost === null || !Number.isFinite(cost))
     ? null
-    : Math.round((price - cost) * 100) / 100
+    : calculateMargin(price, cost, 1)
   const dirty = d.price !== r.price
     || d.costPrice !== (r.costPrice ?? '')
     || d.supplierId !== (r.supplier?.id ?? '')
@@ -152,7 +156,7 @@ function formatDate(value: string | null) {
             </td>
             <td class="admin-table__mono">
               <span v-if="liveMargin !== null" :class="liveMargin >= 0 ? 'costs-page__gain' : 'costs-page__loss'">
-                S/ {{ liveMargin.toFixed(2) }}
+                {{ formatMoney(liveMargin, settings?.currencyCode) }}
                 <template v-if="r.marginPct !== null && !dirty"> · {{ r.marginPct }}%</template>
               </span>
               <span v-else class="costs-page__muted">—</span>

@@ -81,17 +81,17 @@ export default defineEventHandler(async (event) => {
 
   const subtotal = pricedItems.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0)
   const hasPhysicalItem = pricedItems.some(i => i.itemType === 'physical')
-  const { shippingFlatRate } = await getStoreSettings()
+  const { shippingFlatRate, igvRate, mpMinAmount, currencyCode, storeName } = await getStoreSettings()
   // El IGV ya esta incluido en unitPrice (ver shared/utils/pricing.ts): se
   // guarda como referencia para la orden, pero no se suma otra vez al total.
-  const tax = calcTax(subtotal)
+  const tax = calcTax(subtotal, igvRate)
   const shippingCost = calcShipping(hasPhysicalItem, shippingFlatRate)
   const total = subtotal + shippingCost
 
-  if (total < MP_MIN_AMOUNT_PEN) {
+  if (total < mpMinAmount) {
     throw createError({
       statusCode: 400,
-      statusMessage: `El monto minimo de pago con Mercado Pago es S/ ${MP_MIN_AMOUNT_PEN.toFixed(2)}.`,
+      statusMessage: `El monto minimo de pago con Mercado Pago es ${formatMoney(mpMinAmount, currencyCode)}.`,
     })
   }
 
@@ -118,7 +118,7 @@ export default defineEventHandler(async (event) => {
   )
 
   const shortId = order!.id.slice(0, 8).toUpperCase()
-  const description = `Pedido ${shortId} - Carrasco Store`
+  const description = `Pedido ${shortId} - ${storeName}`
 
   // El motor antifraude de Mercado Pago usa nombre/apellido del pagador para
   // calificar el riesgo de la transaccion; sin esto sube la tasa de rechazo.

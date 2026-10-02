@@ -6,6 +6,10 @@ const props = defineProps<{ productId?: string }>()
 const isEdit = computed(() => !!props.productId)
 
 const toast = useToast()
+// Settings ya se cargan globalmente en app.vue (onMounted -> ensureSettings);
+// solo se lee el estado compartido para avisar si la linea de negocio del
+// tipo elegido esta oculta del catalogo publico.
+const { settings } = useStoreSettings()
 
 const { data: categories } = await useFetch<AdminCategory[]>('/api/admin/categories', { default: () => [] })
 
@@ -15,6 +19,12 @@ const { data: existingProduct, pending: loadingProduct } = await useFetch<AdminP
 )
 
 const typeLabels: Record<ProductType, string> = { physical: 'Físico', digital: 'Digital', service: 'Servicio' }
+
+const typeSettingsKey: Record<ProductType, 'physicalEnabled' | 'digitalEnabled' | 'serviceEnabled'> = {
+  physical: 'physicalEnabled',
+  digital: 'digitalEnabled',
+  service: 'serviceEnabled',
+}
 
 const form = reactive({
   name: '',
@@ -29,6 +39,10 @@ const form = reactive({
   durationMinutes: 60,
   defaultModality: 'remote' as 'remote' | 'in_person',
 })
+
+// true solo cuando sabemos con certeza que esa linea de negocio esta
+// desactivada (settings ya cargo); no bloquea el guardado, solo informa.
+const isSelectedTypeHidden = computed(() => settings.value?.[typeSettingsKey[form.type]] === false)
 
 const images = ref<string[]>([])
 const uploadingImage = ref(false)
@@ -227,6 +241,9 @@ async function handleSubmit() {
               <option v-for="t in PRODUCT_TYPES" :key="t" :value="t">{{ typeLabels[t] }}</option>
             </select>
             <p v-if="isEdit" class="field__hint">El tipo no se puede cambiar después de crear el producto.</p>
+            <p v-if="isSelectedTypeHidden" class="field__notice">
+              Esta línea de negocio está oculta del catálogo. Actívala en Configuración si quieres que los clientes la vean.
+            </p>
           </div>
         </div>
 
@@ -395,6 +412,14 @@ async function handleSubmit() {
 .field__hint {
   font-size: 0.78rem;
   color: var(--color-ink-faint);
+  margin: 0;
+}
+.field__notice {
+  font-size: 0.78rem;
+  color: var(--color-ink-muted);
+  background: var(--color-accent-tint);
+  border-radius: var(--radius-control);
+  padding: 0.5rem 0.65rem;
   margin: 0;
 }
 

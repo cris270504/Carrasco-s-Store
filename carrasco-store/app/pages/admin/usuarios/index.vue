@@ -14,6 +14,8 @@ interface AdminUser {
 const { data: fetchedUsers, pending } = await useFetch<AdminUser[]>('/api/admin/users', {
   default: () => [],
 })
+const { settings, ensureSettings } = useStoreSettings()
+await ensureSettings()
 
 const users = computed(() => fetchedUsers.value ?? [])
 
@@ -65,7 +67,7 @@ function formatDate(value: string) {
             </td>
             <td class="users-page__muted">{{ formatDate(user.registeredAt) }}</td>
             <td class="admin-table__mono">{{ user.orders }}</td>
-            <td class="admin-table__mono">S/ {{ user.totalSpent.toFixed(2) }}</td>
+            <td class="admin-table__mono">{{ formatMoney(user.totalSpent, settings?.currencyCode) }}</td>
             <td>
               <span class="status-dot" :class="{ 'is-active': user.active }" />
               {{ user.active ? 'Activo' : 'Suspendido' }}

@@ -1,6 +1,12 @@
 <script setup lang="ts">
+// Lectura no bloqueante: igual que WhatsappFloat/OfferCountdown, el SSR
+// inicial muestra el nombre por defecto y se actualiza solo al cargar
+// store_settings (ver /admin/configuracion).
+const { settings, ensureSettings } = useStoreSettings()
+onMounted(() => { ensureSettings() })
+
 useSeoMeta({
-  ogTitle: 'Carrasco Store',
+  ogTitle: () => settings.value?.storeName || 'Carrasco Store',
   ogDescription: 'Productos físicos, licencias digitales y servicios técnicos en un solo carrito, con pago seguro vía Mercado Pago.',
   ogType: 'website',
   twitterCard: 'summary_large_image',

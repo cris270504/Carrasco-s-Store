@@ -2,10 +2,12 @@
 definePageMeta({ middleware: 'auth' })
 
 const { favorites, loading, fetchFavorites, toggleFavorite } = useFavorites()
+const { settings, ensureSettings } = useStoreSettings()
 
 if (favorites.value.length === 0) {
   await fetchFavorites()
 }
+await ensureSettings()
 
 async function handleRemove(productId: string) {
   await toggleFavorite(productId)
@@ -42,7 +44,7 @@ async function handleRemove(productId: string) {
         </NuxtLink>
         <div class="favorite-card__body">
           <NuxtLink :to="`/producto/${fav.slug}`" class="favorite-card__name">{{ fav.name }}</NuxtLink>
-          <span class="favorite-card__price">S/ {{ Number(fav.price).toFixed(2) }}</span>
+          <span class="favorite-card__price">{{ formatMoney(Number(fav.price), settings?.currencyCode) }}</span>
         </div>
         <button
           type="button"

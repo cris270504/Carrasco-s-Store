@@ -1,3 +1,13 @@
+export interface HomeTrustBadge {
+  icon: string
+  text: string
+}
+
+export interface LegalSection {
+  title: string
+  body: string
+}
+
 export interface StoreSettings {
   shippingFlatRate: number
   whatsappNumber: string | null
@@ -5,6 +15,34 @@ export interface StoreSettings {
   offerCountdownEndsAt: string | null
   offerCountdownTitle: string | null
   offerCountdownUrl: string | null
+
+  storeName: string
+  logoUrl: string | null
+  faviconUrl: string | null
+
+  igvRate: number
+  lowStockThreshold: number
+  mpMinAmount: number
+  currencyCode: string
+
+  physicalEnabled: boolean
+  digitalEnabled: boolean
+  serviceEnabled: boolean
+
+  ownerWhatsappNumbers: string | null
+  senderEmail: string | null
+  facebookUrl: string | null
+  instagramUrl: string | null
+  tiktokUrl: string | null
+
+  homeHeroBadge: string | null
+  homeHeroTitle: string | null
+  homeHeroSubtitle: string | null
+  homeTrustBadges: HomeTrustBadge[] | null
+
+  legalTermsSections: LegalSection[] | null
+  legalPrivacySections: LegalSection[] | null
+
   updatedAt: string | null
 }
 

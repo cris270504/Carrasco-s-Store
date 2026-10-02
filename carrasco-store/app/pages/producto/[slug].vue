@@ -4,7 +4,10 @@ import type { Product } from '~/types/product'
 const route = useRoute()
 const { addItem } = useCart()
 const { isFavorite, toggleFavorite } = useFavorites()
+const { settings, ensureSettings } = useStoreSettings()
 const togglingFavorite = ref(false)
+
+await ensureSettings()
 
 async function handleToggleFavorite() {
   if (!product.value || togglingFavorite.value) return
@@ -29,6 +32,14 @@ const typeLabels: Record<string, string> = {
   digital: 'Digital',
   service: 'Servicio',
 }
+
+useSeoMeta({
+  title: () => product.value ? `${product.value.name} — Carrasco Store` : 'Producto no encontrado — Carrasco Store',
+  description: () => product.value?.description || 'Descubre este producto en Carrasco Store: pago seguro vía Mercado Pago y entrega según el ítem.',
+  ogTitle: () => product.value ? `${product.value.name} — Carrasco Store` : 'Producto no encontrado — Carrasco Store',
+  ogDescription: () => product.value?.description || 'Descubre este producto en Carrasco Store: pago seguro vía Mercado Pago y entrega según el ítem.',
+  ogImage: () => product.value?.images?.[0],
+})
 
 const selectedVariantId = ref<string | null>(product.value?.variants[0]?.id ?? null)
 
@@ -101,7 +112,7 @@ async function handleAdd() {
         <h1>{{ product.name }}</h1>
         <p v-if="product.brand" class="product-info__brand">{{ product.brand }}</p>
 
-        <p class="product-info__price">S/ {{ price.toFixed(2) }}</p>
+        <p class="product-info__price">{{ formatMoney(price, settings?.currencyCode) }}</p>
 
         <p v-if="product.description" class="product-info__description">{{ product.description }}</p>
 

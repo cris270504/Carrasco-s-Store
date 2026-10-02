@@ -1,7 +1,7 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 
-type OrderStatus = 'pending_payment' | 'paid' | 'processing' | 'shipped' | 'completed' | 'cancelled' | 'refunded'
+type OrderStatus = 'pending_payment' | 'payment_in_progress' | 'paid' | 'processing' | 'shipped' | 'completed' | 'cancelled' | 'refunded'
 
 interface ShippingAddress {
   fullName: string
@@ -33,6 +33,8 @@ const confirmDialog = useConfirm()
 const { data: fetchedOrders, pending, refresh } = await useFetch<AdminOrder[]>('/api/admin/orders', {
   default: () => [],
 })
+const { settings, ensureSettings } = useStoreSettings()
+await ensureSettings()
 
 const orders = computed(() => fetchedOrders.value ?? [])
 const updatingId = ref<string | null>(null)
@@ -62,6 +64,7 @@ async function markAsShipped(order: AdminOrder) {
 
 const statusLabels: Record<OrderStatus, string> = {
   pending_payment: 'Pendiente de pago',
+  payment_in_progress: 'Pago en curso',
   paid: 'Pagado',
   processing: 'En proceso',
   shipped: 'Enviado',
@@ -95,6 +98,30 @@ function paymentLabel(status: string | null) {
 
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+async function reconcile(order: AdminOrder) {
+  updatingId.value = order.id
+  try {
+    const res = await $fetch<{ reconciled: boolean, reason?: string, status: string }>(
+      `/api/admin/orders/${order.id}/reconcile`,
+      { method: 'POST' },
+    )
+    await refresh()
+    if (res.reconciled) {
+      toast.success(`Orden #${order.id.slice(0, 8).toUpperCase()} conciliada: pago aprobado.`)
+    }
+    else {
+      toast.info(res.reason || `Mercado Pago reporta el estado "${res.status}".`)
+    }
+  }
+  catch (err) {
+    const fetchError = err as { data?: { statusMessage?: string } }
+    toast.error(fetchError?.data?.statusMessage || 'No se pudo conciliar la orden.')
+  }
+  finally {
+    updatingId.value = null
+  }
 }
 
 const statusFilter = ref<'all' | OrderStatus>('all')
@@ -153,7 +180,7 @@ const filterOptions = [
             <td class="admin-table__mono">#{{ order.id.slice(0, 8).toUpperCase() }}</td>
             <td>{{ order.customer }}</td>
             <td class="orders-page__items">{{ order.items }}</td>
-            <td class="admin-table__mono">S/ {{ order.total.toFixed(2) }}</td>
+            <td class="admin-table__mono">{{ formatMoney(order.total, settings?.currencyCode) }}</td>
             <td><span class="payment-badge" :class="`is-${order.paymentStatus}`">{{ paymentLabel(order.paymentStatus) }}</span></td>
             <td><span class="status-badge" :class="`is-${order.status}`">{{ statusLabels[order.status] }}</span></td>
             <td class="orders-page__address">
@@ -172,6 +199,15 @@ const filterOptions = [
                 @click="markAsShipped(order)"
               >
                 Marcar enviado
+              </button>
+              <button
+                v-if="order.status === 'pending_payment' || order.status === 'payment_in_progress'"
+                type="button"
+                class="btn btn-outline orders-page__ship-btn"
+                :disabled="updatingId === order.id"
+                @click="reconcile(order)"
+              >
+                Conciliar con MP
               </button>
             </td>
           </tr>

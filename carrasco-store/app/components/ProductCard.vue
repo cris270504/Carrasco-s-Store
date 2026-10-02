@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import type { Product } from '~/types/product'
 
-const props = withDefaults(defineProps<{ product: Product, view?: 'grid' | 'list' }>(), {
+const props = withDefaults(defineProps<{ product: Product, view?: 'grid' | 'list', priority?: boolean }>(), {
   view: 'grid',
+  priority: false,
 })
 
 const emit = defineEmits<{ addToCart: [product: Product] }>()
 
 const { isFavorite, toggleFavorite } = useFavorites()
+const { settings } = useStoreSettings()
 const togglingFavorite = ref(false)
 
 async function handleToggleFavorite() {
@@ -65,7 +67,8 @@ const isOutOfStock = computed(() => {
         v-if="product.images?.[0]"
         :src="product.images[0]"
         :alt="product.name"
-        loading="lazy"
+        :loading="priority ? 'eager' : 'lazy'"
+        :fetchpriority="priority ? 'high' : undefined"
         width="400"
         height="300"
         fit="cover"
@@ -106,7 +109,7 @@ const isOutOfStock = computed(() => {
 
       <div class="product-card__footer">
         <div>
-          <span class="product-card__price">S/ {{ Number(product.price).toFixed(2) }}</span>
+          <span class="product-card__price">{{ formatMoney(Number(product.price), settings?.currencyCode) }}</span>
           <span class="product-card__availability">{{ availabilityLabel }}</span>
         </div>
 

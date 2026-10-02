@@ -3,14 +3,10 @@
 // flujo de venta (ver sendEmail / sendWhatsappNotice).
 
 function getOwnerEmails(): string[] {
-  return (process.env.ADMIN_EMAILS || '')
+  return (useRuntimeConfig().adminEmails || '')
     .split(',')
     .map(e => e.trim())
     .filter(Boolean)
-}
-
-function money(n: number) {
-  return `S/ ${n.toFixed(2)}`
 }
 
 const CHANNEL_LABELS: Record<string, string> = {
@@ -30,6 +26,9 @@ export async function notifyOwnersOfSale(params: {
   channel?: string | null
   orderShortId?: string | null
 }) {
+  const settings = await getStoreSettings()
+  const money = (n: number) => formatMoney(n, settings.currencyCode)
+
   const origin = params.kind === 'store' ? 'Tienda online' : `Venta particular (${CHANNEL_LABELS[params.channel ?? ''] ?? 'directa'})`
   const lines = [
     `Origen: ${origin}`,
@@ -45,15 +44,16 @@ export async function notifyOwnersOfSale(params: {
     ? sendEmail({
         to: emails,
         subject: `🛒 Nueva venta — ${money(params.total)}`,
-        html: `<h2>Nueva venta en Carrasco Store</h2><ul>${lines.map(l => `<li>${l}</li>`).join('')}</ul>`,
+        html: `<h2>Nueva venta en ${settings.storeName}</h2><ul>${lines.map(l => `<li>${l}</li>`).join('')}</ul>`,
       })
     : Promise.resolve({ ok: false, skipped: true })
 
   const waText = `🛒 *Nueva venta* — ${money(params.total)}\n${lines.join('\n')}`
-  const waTasks = getWhatsappOwnerNumbers().map(to => sendWhatsappNotice({
+  const ownerNumbers = await getWhatsappOwnerNumbers()
+  const waTasks = ownerNumbers.map(to => sendWhatsappNotice({
     to,
     text: waText,
-    template: process.env.WHATSAPP_OWNER_TEMPLATE,
+    template: useRuntimeConfig().whatsappOwnerTemplate,
     templateParams: [origin, params.title, money(params.total)],
   }))
 
@@ -68,28 +68,32 @@ export async function notifyBuyerOfOrder(params: {
   items: { name: string, quantity: number }[]
   total: number
 }) {
+  const settings = await getStoreSettings()
+  const money = (n: number) => formatMoney(n, settings.currencyCode)
   const itemsText = params.items.map(i => `${i.quantity}× ${i.name}`).join(', ')
 
   const tasks: Promise<unknown>[] = []
 
   if (params.email) {
-    tasks.push(sendEmail({
-      to: params.email,
-      subject: `Confirmación de tu compra #${params.orderShortId}`,
-      html: `<h2>¡Gracias por tu compra!</h2>`
+    const tpl = await getMessageTemplate('buyer_confirmation_email')
+    const vars = { orderShortId: params.orderShortId, itemsText, total: money(params.total), storeName: settings.storeName }
+    const subject = tpl ? renderTemplate(tpl.subject, vars) : `Confirmación de tu compra #${params.orderShortId}`
+    const html = tpl
+      ? renderTemplate(tpl.body, vars)
+      : `<h2>¡Gracias por tu compra!</h2>`
         + `<p>Tu pedido <strong>#${params.orderShortId}</strong> fue registrado y el pago está confirmado.</p>`
         + `<p><strong>Detalle:</strong> ${itemsText}</p>`
         + `<p><strong>Total:</strong> ${money(params.total)}</p>`
-        + `<p>Puedes seguir el estado desde tu panel en Carrasco Store.</p>`,
-    }))
+        + `<p>Puedes seguir el estado desde tu panel en ${settings.storeName}.</p>`
+    tasks.push(sendEmail({ to: params.email, subject, html }))
   }
 
   const phone = normalizePhone(params.phone)
   if (phone) {
     tasks.push(sendWhatsappNotice({
       to: phone,
-      text: `¡Gracias por tu compra en Carrasco Store! 🛒\nPedido #${params.orderShortId}\n${itemsText}\nTotal: ${money(params.total)}\nEl pago está confirmado.`,
-      template: process.env.WHATSAPP_BUYER_TEMPLATE,
+      text: `¡Gracias por tu compra en ${settings.storeName}! 🛒\nPedido #${params.orderShortId}\n${itemsText}\nTotal: ${money(params.total)}\nEl pago está confirmado.`,
+      template: useRuntimeConfig().whatsappBuyerTemplate,
       templateParams: [params.orderShortId, itemsText, money(params.total)],
     }))
   }

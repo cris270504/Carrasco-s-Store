@@ -3,14 +3,26 @@ const user = useSupabaseUser()
 const { count } = useCart()
 const { theme, init, toggle } = useTheme()
 const isAdmin = useIsAdmin()
+const { settings, ensureSettings } = useStoreSettings()
 
-onMounted(() => { init() })
+onMounted(() => { init(); ensureSettings() })
+
+// Nombre de marca configurable desde /admin/configuracion. Sin espacio no hay
+// "resto" que mostrar fuera de la pildora (ej. un nombre de una sola palabra).
+const storeName = computed(() => settings.value?.storeName || 'Carrasco Store')
+const logoPill = computed(() => storeName.value.split(' ')[0])
+const logoRest = computed(() => storeName.value.slice(logoPill.value.length).trim())
 </script>
 
 <template>
   <header class="app-header">
     <div class="app-header__inner">
-      <NuxtLink to="/" class="app-header__logo"><span>Carrasco</span> Store</NuxtLink>
+      <NuxtLink to="/" class="app-header__logo">
+        <img v-if="settings?.logoUrl" :src="settings.logoUrl" :alt="storeName" class="app-header__logo-img">
+        <template v-else>
+          <span>{{ logoPill }}</span> {{ logoRest }}
+        </template>
+      </NuxtLink>
 
       <nav class="app-header__nav" aria-label="Navegación principal">
         <NuxtLink to="/catalogo" class="app-header__link">Catálogo</NuxtLink>
@@ -118,6 +130,11 @@ onMounted(() => { init() })
   font-size: 0.85rem;
   text-decoration: none;
   color: #f6ecdc;
+}
+.app-header__logo-img {
+  height: 28px;
+  width: auto;
+  border-radius: 6px;
 }
 .app-header__logo span {
   font-family: var(--font-display);

@@ -3,10 +3,28 @@ import type { Product } from '~/types/product'
 
 const { addItem } = useCart()
 const toast = useToast()
+const { settings, ensureSettings } = useStoreSettings()
+onMounted(() => { ensureSettings() })
 
 const { data: featuredProducts } = await useFetch<Product[]>('/api/products', {
   query: { limit: 4 },
 })
+
+const storeName = computed(() => settings.value?.storeName || 'Carrasco Store')
+
+useSeoMeta({
+  title: () => `${storeName.value} — Físicos, digitales y servicios en un solo carrito`,
+  description: 'Compra productos físicos, licencias digitales y servicios técnicos con pago seguro vía Mercado Pago y entrega según el ítem, todo en una sola tienda.',
+  ogTitle: () => `${storeName.value} — Físicos, digitales y servicios en un solo carrito`,
+  ogDescription: 'Productos físicos, licencias digitales y servicios técnicos, comprados, pagados y entregados sin cambiar de tienda.',
+  ogImage: featuredProducts.value?.[0]?.images?.[0],
+})
+
+// Hero configurable desde /admin/configuracion; si el admin no cargo nada
+// todavia, se usan los textos originales como fallback.
+const heroBadge = computed(() => settings.value?.homeHeroBadge || '⚡ Ahora con pagos vía Mercado Pago')
+const heroTitle = computed(() => settings.value?.homeHeroTitle || 'Todo lo que tu proyecto necesita.')
+const heroSubtitle = computed(() => settings.value?.homeHeroSubtitle || 'Productos físicos, licencias digitales y servicios técnicos — comprados, pagados y entregados sin cambiar de tienda.')
 
 async function handleAddToCart(product: Product) {
   try {
@@ -50,6 +68,16 @@ const offerTypes = [
   },
 ] as const
 
+// Oculta la tarjeta de un tipo de producto si esa linea de negocio esta
+// desactivada en Configuracion. `settings.value` puede ser null mientras
+// carga (ver app.vue): en ese caso se muestran las 3, para no parpadear.
+const visibleOfferTypes = computed(() => offerTypes.filter((offer) => {
+  if (!settings.value) return true
+  if (offer.type === 'physical') return settings.value.physicalEnabled
+  if (offer.type === 'digital') return settings.value.digitalEnabled
+  return settings.value.serviceEnabled
+}))
+
 const benefits = [
   {
     icon: 'shield',
@@ -73,11 +101,12 @@ const benefits = [
   },
 ] as const
 
-const trustBadges = [
+const defaultTrustBadges = [
   { icon: 'shield', text: 'Pago seguro' },
   { icon: 'bolt', text: 'Entrega inmediata' },
   { icon: 'headset', text: 'Soporte certificado' },
-] as const
+]
+const trustBadges = computed(() => settings.value?.homeTrustBadges?.length ? settings.value.homeTrustBadges : defaultTrustBadges)
 
 const heroFloaters = [
   { icon: 'box', label: 'Físico', className: 'is-physical' },
@@ -92,11 +121,10 @@ const heroFloaters = [
       <div class="hero__glow" aria-hidden="true" />
       <div class="hero__inner">
         <div class="hero__copy">
-          <span class="hero__pill">⚡ Ahora con pagos vía Mercado Pago</span>
-          <h1>Todo lo que tu proyecto necesita.</h1>
+          <span class="hero__pill">{{ heroBadge }}</span>
+          <h1>{{ heroTitle }}</h1>
           <p class="hero__subtitle">
-            Productos físicos, licencias digitales y servicios técnicos — comprados, pagados y
-            entregados sin cambiar de tienda.
+            {{ heroSubtitle }}
           </p>
           <div class="hero__actions">
             <NuxtLink to="/catalogo" class="btn btn-primary hero__cta">Ver catálogo</NuxtLink>
@@ -164,9 +192,10 @@ const heroFloaters = [
 
       <div class="featured__grid">
         <ProductCard
-          v-for="product in featuredProducts"
+          v-for="(product, index) in featuredProducts"
           :key="product.id"
           :product="product"
+          :priority="index < 4"
           @add-to-cart="handleAddToCart"
         />
       </div>
@@ -184,7 +213,7 @@ const heroFloaters = [
 
       <div class="offers__grid">
         <NuxtLink
-          v-for="offer in offerTypes"
+          v-for="offer in visibleOfferTypes"
           :key="offer.type"
           :to="`/catalogo?type=${offer.type}`"
           class="offer-card"

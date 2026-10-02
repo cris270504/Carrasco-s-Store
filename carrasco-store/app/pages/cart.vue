@@ -27,7 +27,7 @@ const hasPhysicalItem = computed(() => items.value.some(i => i.itemType === 'phy
 const shipping = computed(() => calcShipping(hasPhysicalItem.value, settings.value?.shippingFlatRate))
 // El IGV ya esta incluido en el precio de cada producto: es solo informativo,
 // no se suma al total (ver shared/utils/pricing.ts).
-const tax = computed(() => calcTax(subtotal.value))
+const tax = computed(() => calcTax(subtotal.value, settings.value?.igvRate))
 const total = computed(() => subtotal.value + shipping.value)
 
 // Direccion de envio: se pide solo cuando el carrito tiene un producto

@@ -16,9 +16,11 @@ interface FinanceData {
 }
 
 const { data, pending } = await useFetch<FinanceData>('/api/admin/finance')
+const { settings, ensureSettings } = useStoreSettings()
+await ensureSettings()
 
 function money(n: number) {
-  return `S/ ${n.toFixed(2)}`
+  return formatMoney(n, settings.value?.currencyCode)
 }
 
 const summaryCards = computed(() => {

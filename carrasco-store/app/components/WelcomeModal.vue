@@ -3,6 +3,9 @@ const user = useSupabaseUser()
 const visible = ref(false)
 const dialogRef = ref<HTMLElement | null>(null)
 useFocusTrap(dialogRef, visible)
+const { settings, ensureSettings } = useStoreSettings()
+onMounted(() => { ensureSettings() })
+const storeName = computed(() => settings.value?.storeName || 'Carrasco Store')
 
 function storageKey(userId: string) {
   return `welcome-seen:${userId}`
@@ -35,7 +38,7 @@ function close() {
       <div v-if="visible" class="welcome-overlay" @click.self="close">
         <div ref="dialogRef" class="welcome-dialog" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
           <span class="welcome-dialog__icon" aria-hidden="true">👋</span>
-          <h3 id="welcome-title">¡Bienvenido a Carrasco Store!</h3>
+          <h3 id="welcome-title">¡Bienvenido a {{ storeName }}!</h3>
           <p>
             Tu cuenta ya está lista. Explora el catálogo de productos físicos, licencias digitales
             y servicios técnicos, todo desde un solo carrito.

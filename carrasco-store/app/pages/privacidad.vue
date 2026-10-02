@@ -1,14 +1,19 @@
 <script setup lang="ts">
+const { settings, ensureSettings } = useStoreSettings()
+onMounted(() => { ensureSettings() })
+const storeName = computed(() => settings.value?.storeName || 'Carrasco Store')
+
 useSeoMeta({
   title: 'Política de Privacidad',
-  description: 'Política de privacidad y tratamiento de datos personales de Carrasco Store.',
-  ogTitle: 'Política de Privacidad · Carrasco Store',
-  ogDescription: 'Política de privacidad y tratamiento de datos personales de Carrasco Store.',
+  description: () => `Política de privacidad y tratamiento de datos personales de ${storeName.value}.`,
+  ogTitle: () => `Política de Privacidad · ${storeName.value}`,
+  ogDescription: () => `Política de privacidad y tratamiento de datos personales de ${storeName.value}.`,
 })
 
 const lastUpdated = new Date().toLocaleDateString('es-PE', { year: 'numeric', month: 'long', day: 'numeric' })
 
-const sections = [
+// Editable desde /admin/configuracion; sin eso, se usa el texto por defecto.
+const defaultSections = [
   {
     title: '1. Datos que recopilamos',
     body: 'Recopilamos los datos que nos proporcionas al crear una cuenta (nombre, correo electrónico), al completar un pedido (dirección de envío, preferencias de agendamiento) y los datos técnicos generados por el uso del sitio (dirección IP, tipo de dispositivo, páginas visitadas).',
@@ -54,6 +59,8 @@ const sections = [
     body: 'Para consultas sobre el tratamiento de tus datos personales, puedes contactarnos a través de los medios de soporte disponibles en el sitio.',
   },
 ]
+
+const sections = computed(() => settings.value?.legalPrivacySections?.length ? settings.value.legalPrivacySections : defaultSections)
 </script>
 
 <template>

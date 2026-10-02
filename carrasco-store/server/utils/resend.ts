@@ -1,15 +1,18 @@
 const RESEND_API_BASE = 'https://api.resend.com'
 
 function getResendKey() {
-  const key = process.env.RESEND_API_KEY
+  const key = useRuntimeConfig().resendApiKey
   if (!key) {
     throw new Error('Resend no esta configurado (falta RESEND_API_KEY en .env)')
   }
   return key
 }
 
-function getFrom() {
-  return process.env.RESEND_FROM_EMAIL || 'Carrasco Store <onboarding@resend.dev>'
+// El remitente lo elige el admin en /admin/configuracion (senderEmail); si no
+// lo configuro, cae a la env var y luego al remitente de prueba de Resend.
+async function getFrom() {
+  const settings = await getStoreSettings()
+  return settings.senderEmail || useRuntimeConfig().resendFromEmail || 'Carrasco Store <onboarding@resend.dev>'
 }
 
 // Envio generico. Igual que WhatsApp: si falta la API key no explota, solo
@@ -19,13 +22,13 @@ export async function sendEmail(params: {
   subject: string
   html: string
 }): Promise<{ ok: boolean, skipped?: boolean }> {
-  if (!process.env.RESEND_API_KEY) return { ok: false, skipped: true }
+  if (!useRuntimeConfig().resendApiKey) return { ok: false, skipped: true }
 
   try {
     await $fetch(`${RESEND_API_BASE}/emails`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${getResendKey()}` },
-      body: { from: getFrom(), to: params.to, subject: params.subject, html: params.html },
+      body: { from: await getFrom(), to: params.to, subject: params.subject, html: params.html },
     })
     return { ok: true }
   }
@@ -35,19 +38,24 @@ export async function sendEmail(params: {
   }
 }
 
+// Las dos plantillas 100% lineales (sin lineas condicionales) son editables
+// desde /admin/configuracion via message_templates. Si no hay fila guardada,
+// se usa el texto por defecto de abajo — nunca falla por falta de plantilla.
 export async function sendLicenseEmail(params: { to: string, productName: string, code: string }) {
   const key = getResendKey()
+  const settings = await getStoreSettings()
+  const tpl = await getMessageTemplate('license_delivery_email')
+
+  const subject = tpl ? renderTemplate(tpl.subject, { productName: params.productName }) : `Tu licencia: ${params.productName}`
+  const html = tpl
+    ? renderTemplate(tpl.body, { productName: params.productName, code: params.code, storeName: settings.storeName })
+    : `<p>Gracias por tu compra en ${settings.storeName}.</p>`
+      + `<p><strong>${params.productName}</strong></p>`
+      + `<p>Tu código: <code style="font-size:1.1em">${params.code}</code></p>`
 
   await $fetch(`${RESEND_API_BASE}/emails`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${key}` },
-    body: {
-      from: getFrom(),
-      to: params.to,
-      subject: `Tu licencia: ${params.productName}`,
-      html: `<p>Gracias por tu compra en Carrasco Store.</p>`
-        + `<p><strong>${params.productName}</strong></p>`
-        + `<p>Tu código: <code style="font-size:1.1em">${params.code}</code></p>`,
-    },
+    body: { from: await getFrom(), to: params.to, subject, html },
   })
 }

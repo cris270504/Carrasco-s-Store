@@ -1,13 +1,18 @@
 <script setup lang="ts">
 const { fetchCart } = useCart()
 const { fetchFavorites } = useFavorites()
+const { settings, ensureSettings } = useStoreSettings()
 onMounted(() => {
   fetchCart()
   fetchFavorites()
+  ensureSettings()
 })
 
 useHead({
-  titleTemplate: (title) => title ? `${title} · Carrasco Store` : 'Carrasco Store',
+  titleTemplate: (title) => {
+    const storeName = settings.value?.storeName || 'Carrasco Store'
+    return title ? `${title} · ${storeName}` : storeName
+  },
 })
 </script>
 

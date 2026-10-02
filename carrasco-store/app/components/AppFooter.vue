@@ -1,21 +1,26 @@
 <script setup lang="ts">
 const year = new Date().getFullYear()
+// Settings ya se cargan globalmente en app.vue (onMounted -> ensureSettings);
+// aca solo se lee el estado compartido para ocultar los enlaces de lineas
+// de negocio desactivadas.
+const { settings } = useStoreSettings()
+const storeName = computed(() => settings.value?.storeName || 'Carrasco Store')
 </script>
 
 <template>
   <footer class="app-footer">
     <div class="app-footer__inner">
       <div class="app-footer__brand">
-        <NuxtLink to="/" class="app-footer__logo">Carrasco Store</NuxtLink>
+        <NuxtLink to="/" class="app-footer__logo">{{ storeName }}</NuxtLink>
         <p>Productos físicos, licencias digitales y servicios técnicos en un solo carrito.</p>
       </div>
 
       <nav class="app-footer__col" aria-label="Tienda">
         <p class="app-footer__heading">Tienda</p>
         <NuxtLink to="/catalogo">Todo el catálogo</NuxtLink>
-        <NuxtLink to="/catalogo?type=physical">Productos físicos</NuxtLink>
-        <NuxtLink to="/catalogo?type=digital">Licencias digitales</NuxtLink>
-        <NuxtLink to="/catalogo?type=service">Servicios técnicos</NuxtLink>
+        <NuxtLink v-if="settings?.physicalEnabled !== false" to="/catalogo?type=physical">Productos físicos</NuxtLink>
+        <NuxtLink v-if="settings?.digitalEnabled !== false" to="/catalogo?type=digital">Licencias digitales</NuxtLink>
+        <NuxtLink v-if="settings?.serviceEnabled !== false" to="/catalogo?type=service">Servicios técnicos</NuxtLink>
       </nav>
 
       <nav class="app-footer__col" aria-label="Cuenta">
@@ -28,7 +33,7 @@ const year = new Date().getFullYear()
     </div>
 
     <div class="app-footer__bottom">
-      <span>© {{ year }} Carrasco Store</span>
+      <span>© {{ year }} {{ storeName }}</span>
       <nav class="app-footer__legal" aria-label="Legal">
         <NuxtLink to="/terminos">Términos y condiciones</NuxtLink>
         <NuxtLink to="/privacidad">Política de privacidad</NuxtLink>

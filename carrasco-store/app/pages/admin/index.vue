@@ -16,6 +16,8 @@ interface AdminMetrics {
 }
 
 const { data: metrics, pending } = await useFetch<AdminMetrics>('/api/admin/metrics')
+const { settings, ensureSettings } = useStoreSettings()
+await ensureSettings()
 
 const statusLabels: Record<string, string> = {
   pending_payment: 'Pendiente de pago',
@@ -49,7 +51,7 @@ const maxSale = computed(() => Math.max(1, ...(metrics.value?.weeklySales ?? [])
               <path d="M13 5h5v5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
           </div>
-          <p class="metric-card__value">S/ {{ metrics.salesThisMonth.toFixed(2) }}</p>
+          <p class="metric-card__value">{{ formatMoney(metrics.salesThisMonth, settings?.currencyCode) }}</p>
           <p class="metric-card__label">Ventas del mes</p>
           <span
             class="metric-card__change"
@@ -146,7 +148,7 @@ const maxSale = computed(() => Math.max(1, ...(metrics.value?.weeklySales ?? [])
             <tr v-for="order in metrics.recentOrders" :key="order.id">
               <td class="admin-table__mono">#{{ order.id.slice(0, 8).toUpperCase() }}</td>
               <td>{{ order.customer }}</td>
-              <td class="admin-table__mono">S/ {{ order.total.toFixed(2) }}</td>
+              <td class="admin-table__mono">{{ formatMoney(order.total, settings?.currencyCode) }}</td>
               <td><span class="status-badge" :class="`is-${order.status}`">{{ statusLabels[order.status] ?? order.status }}</span></td>
             </tr>
           </tbody>

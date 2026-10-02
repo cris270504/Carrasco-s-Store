@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { calculateMargin } from '#shared/utils/margin'
+
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 
 interface ManualSale {
@@ -24,6 +26,8 @@ const confirmDialog = useConfirm()
 const { data: sales, refresh } = await useFetch<ManualSale[]>('/api/admin/manual-sales', { default: () => [] })
 const { data: products } = await useFetch<CatalogProduct[]>('/api/admin/costs', { default: () => [] })
 const { data: suppliers } = await useFetch<Supplier[]>('/api/admin/suppliers', { default: () => [] })
+const { settings, ensureSettings } = useStoreSettings()
+await ensureSettings()
 
 const channelLabels: Record<string, string> = {
   whatsapp: 'WhatsApp', presencial: 'Presencial', redes: 'Redes', otro: 'Otro',
@@ -55,7 +59,7 @@ const liveProfit = computed(() => {
   const price = Number(form.unitPrice)
   const cost = Number(form.unitCost || 0)
   if (!Number.isFinite(price)) return null
-  return Math.round((price - cost) * form.quantity * 100) / 100
+  return calculateMargin(price, cost, form.quantity)
 })
 
 const submitting = ref(false)
@@ -187,7 +191,7 @@ function formatDate(value: string) {
 
       <div class="ms-form__foot">
         <span v-if="liveProfit !== null" class="ms-form__profit">
-          Ganancia: <strong :class="liveProfit >= 0 ? 'is-gain' : 'is-loss'">S/ {{ liveProfit.toFixed(2) }}</strong>
+          Ganancia: <strong :class="liveProfit >= 0 ? 'is-gain' : 'is-loss'">{{ formatMoney(liveProfit, settings?.currencyCode) }}</strong>
         </span>
         <button type="submit" class="btn btn-primary" :disabled="submitting">
           {{ submitting ? 'Registrando…' : 'Registrar venta' }}
@@ -217,9 +221,9 @@ function formatDate(value: string) {
             <td class="ms-page__muted">{{ s.customerName || '—' }}</td>
             <td class="ms-page__muted">{{ channelLabels[s.channel] ?? s.channel }}</td>
             <td class="admin-table__mono">{{ s.quantity }}</td>
-            <td class="admin-table__mono">S/ {{ s.revenue.toFixed(2) }}</td>
+            <td class="admin-table__mono">{{ formatMoney(s.revenue, settings?.currencyCode) }}</td>
             <td class="admin-table__mono">
-              <span :class="s.profit >= 0 ? 'is-gain' : 'is-loss'">S/ {{ s.profit.toFixed(2) }}</span>
+              <span :class="s.profit >= 0 ? 'is-gain' : 'is-loss'">{{ formatMoney(s.profit, settings?.currencyCode) }}</span>
             </td>
             <td>
               <button type="button" class="btn btn-outline ms-page__del" @click="remove(s)">Eliminar</button>

@@ -16,17 +16,18 @@ const GRAPH_BASE = 'https://graph.facebook.com/v21.0'
 interface WaConfig { token: string, phoneNumberId: string }
 
 function getConfig(): WaConfig | null {
-  const token = process.env.WHATSAPP_TOKEN
-  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID
+  const token = useRuntimeConfig().whatsappToken
+  const phoneNumberId = useRuntimeConfig().whatsappPhoneNumberId
   if (!token || !phoneNumberId) return null
   return { token, phoneNumberId }
 }
 
-export function getWhatsappOwnerNumbers(): string[] {
-  return (process.env.WHATSAPP_OWNER_NUMBERS || '')
-    .split(',')
-    .map(n => n.replace(/[^\d]/g, '').trim())
-    .filter(Boolean)
+// El admin puede configurar los numeros desde /admin/configuracion
+// (ownerWhatsappNumbers); si no lo hizo, cae a la env var original.
+export async function getWhatsappOwnerNumbers(): Promise<string[]> {
+  const settings = await getStoreSettings()
+  const raw = settings.ownerWhatsappNumbers || useRuntimeConfig().whatsappOwnerNumbers || ''
+  return raw.split(',').map(n => n.replace(/[^\d]/g, '').trim()).filter(Boolean)
 }
 
 // Normaliza un telefono a E.164 sin '+'. Asume Peru (+51) si viene un numero
@@ -72,7 +73,7 @@ export function sendWhatsappTemplate(params: {
     type: 'template',
     template: {
       name: params.template,
-      language: { code: params.lang || process.env.WHATSAPP_TEMPLATE_LANG || 'es_PE' },
+      language: { code: params.lang || useRuntimeConfig().whatsappTemplateLang || 'es_PE' },
       components: params.bodyParams?.length
         ? [{ type: 'body', parameters: params.bodyParams.map(text => ({ type: 'text', text })) }]
         : undefined,

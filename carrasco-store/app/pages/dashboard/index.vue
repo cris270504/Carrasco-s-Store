@@ -13,6 +13,8 @@ const displayName = computed(() => {
 })
 
 const { data: orders, pending, error } = await useFetch<Order[]>('/api/orders')
+const { settings, ensureSettings } = useStoreSettings()
+await ensureSettings()
 
 const orderStatusLabels: Record<Order['status'], string> = {
   pending_payment: 'Pendiente de pago',
@@ -92,7 +94,7 @@ async function handleLogout() {
               <span class="order-row__date">{{ formatDate(order.createdAt) }}</span>
             </div>
             <span class="order-row__status" :class="`is-${order.status}`">{{ orderStatusLabels[order.status] }}</span>
-            <span class="order-row__total">S/ {{ Number(order.total).toFixed(2) }}</span>
+            <span class="order-row__total">{{ formatMoney(Number(order.total), settings?.currencyCode) }}</span>
           </div>
         </div>
         <div v-else class="dashboard-card__empty">

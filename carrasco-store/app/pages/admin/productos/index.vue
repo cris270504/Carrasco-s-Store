@@ -6,6 +6,8 @@ definePageMeta({ layout: 'admin', middleware: 'admin' })
 const { data: products, refresh } = await useFetch<AdminProductListItem[]>('/api/admin/products', {
   default: () => [],
 })
+const { settings, ensureSettings } = useStoreSettings()
+await ensureSettings()
 
 const typeLabels = { physical: 'Físico', digital: 'Digital', service: 'Servicio' } as const
 const typeFilter = ref<'all' | 'physical' | 'digital' | 'service'>('all')
@@ -106,7 +108,7 @@ async function handleDelete(product: AdminProductListItem) {
             <td class="products-page__name">{{ product.name }}</td>
             <td><span class="type-badge" :class="`is-${product.type}`">{{ typeLabels[product.type] }}</span></td>
             <td>{{ product.brand ?? '—' }}</td>
-            <td class="admin-table__mono">S/ {{ Number(product.price).toFixed(2) }}</td>
+            <td class="admin-table__mono">{{ formatMoney(Number(product.price), settings?.currencyCode) }}</td>
             <td class="products-page__detail">{{ product.detail }}</td>
             <td>
               <span class="status-dot" :class="{ 'is-active': product.isActive }" />

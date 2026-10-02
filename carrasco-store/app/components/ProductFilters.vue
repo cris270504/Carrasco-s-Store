@@ -3,13 +3,17 @@ import type { ProductFilters } from '~/composables/useProductFilters'
 
 const props = defineProps<{ filters: ProductFilters }>()
 const emit = defineEmits<{ reset: [] }>()
+const { settings } = useStoreSettings()
 
-const typeOptions = [
-  { value: '', label: 'Todos' },
-  { value: 'physical', label: 'Físicos' },
-  { value: 'digital', label: 'Digitales' },
-  { value: 'service', label: 'Servicios' },
+const ALL_TYPE_OPTIONS = [
+  { value: '', label: 'Todos', enabled: () => true },
+  { value: 'physical', label: 'Físicos', enabled: (s: typeof settings.value) => s?.physicalEnabled !== false },
+  { value: 'digital', label: 'Digitales', enabled: (s: typeof settings.value) => s?.digitalEnabled !== false },
+  { value: 'service', label: 'Servicios', enabled: (s: typeof settings.value) => s?.serviceEnabled !== false },
 ] as const
+// Oculta el chip de una linea de negocio desactivada en Configuracion — sin
+// esto, el chip quedaba visible pero siempre devolvia cero resultados.
+const typeOptions = computed(() => ALL_TYPE_OPTIONS.filter(o => o.enabled(settings.value)))
 
 // Techo solo de referencia visual para el slider; los inputs numéricos
 // aceptan cualquier valor y son los que realmente viajan en la query.
@@ -66,7 +70,7 @@ const activeFilterCount = computed(() => {
     </div>
 
     <div class="filters__group">
-      <span class="filters__label">Precio (S/)</span>
+      <span class="filters__label">Precio ({{ settings?.currencyCode || 'PEN' }})</span>
       <div class="filters__price-slider">
         <div class="filters__price-track">
           <div

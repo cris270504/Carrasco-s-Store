@@ -25,10 +25,11 @@ export default defineEventHandler(async (event) => {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
   const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
 
-  const [allOrders, allProducts, authUsers] = await Promise.all([
+  const [allOrders, allProducts, authUsers, { lowStockThreshold }] = await Promise.all([
     db.query.orders.findMany(),
     db.query.products.findMany({ with: { variants: true } }),
     listAllAuthUsers(event),
+    getStoreSettings(),
   ])
 
   let salesThisMonth = 0
@@ -66,7 +67,7 @@ export default defineEventHandler(async (event) => {
   const lowStock = allProducts
     .filter(p => p.type === 'physical')
     .map(p => ({ name: p.name, stock: getEffectiveStock(p) }))
-    .filter(p => p.stock <= 3)
+    .filter(p => p.stock <= lowStockThreshold)
     .sort((a, b) => a.stock - b.stock)
     .slice(0, 5)
 

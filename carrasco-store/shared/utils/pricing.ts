@@ -9,9 +9,12 @@
 export const IGV_RATE = 0.18
 export const FLAT_SHIPPING_RATE = 15
 
-// Descompone el IGV ya incluido en `subtotal` (subtotal = base * 1.18).
-export function calcTax(subtotal: number) {
-  return Math.round((subtotal - subtotal / (1 + IGV_RATE)) * 100) / 100
+// Descompone el IGV ya incluido en `subtotal` (subtotal = base * (1 + rate)).
+// El rate real se configura en /admin/configuracion (tabla store_settings) y
+// se pasa via el parametro `rate`, igual que calcShipping con el envio.
+// IGV_RATE queda como fallback mientras no exista fila de configuracion.
+export function calcTax(subtotal: number, rate: number = IGV_RATE) {
+  return Math.round((subtotal - subtotal / (1 + rate)) * 100) / 100
 }
 
 // El costo real se configura en /admin/configuracion (tabla store_settings) y

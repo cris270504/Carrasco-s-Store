@@ -1,14 +1,19 @@
 <script setup lang="ts">
+const { settings, ensureSettings } = useStoreSettings()
+onMounted(() => { ensureSettings() })
+const storeName = computed(() => settings.value?.storeName || 'Carrasco Store')
+
 useSeoMeta({
   title: 'Términos y Condiciones',
-  description: 'Términos y condiciones de uso y compra en Carrasco Store.',
-  ogTitle: 'Términos y Condiciones · Carrasco Store',
-  ogDescription: 'Términos y condiciones de uso y compra en Carrasco Store.',
+  description: () => `Términos y condiciones de uso y compra en ${storeName.value}.`,
+  ogTitle: () => `Términos y Condiciones · ${storeName.value}`,
+  ogDescription: () => `Términos y condiciones de uso y compra en ${storeName.value}.`,
 })
 
 const lastUpdated = new Date().toLocaleDateString('es-PE', { year: 'numeric', month: 'long', day: 'numeric' })
 
-const sections = [
+// Editable desde /admin/configuracion; sin eso, se usa el texto por defecto.
+const defaultSections = [
   {
     title: '1. Aceptación de los términos',
     body: 'Al acceder y utilizar Carrasco Store aceptas quedar vinculado por estos Términos y Condiciones, así como por nuestra Política de Privacidad. Si no estás de acuerdo con alguna de estas condiciones, no debes utilizar el sitio ni realizar compras a través de él.',
@@ -54,6 +59,8 @@ const sections = [
     body: 'Ante cualquier consulta sobre estos términos, puedes contactarnos a través de los medios de soporte disponibles en el sitio.',
   },
 ]
+
+const sections = computed(() => settings.value?.legalTermsSections?.length ? settings.value.legalTermsSections : defaultSections)
 </script>
 
 <template>
