@@ -1,16 +1,47 @@
 <script setup lang="ts">
-// Sin middleware 'auth': la sesion temporal de recuperacion ya la establece
-// Supabase al procesar el link, un guard de sesion normal no aplica aca.
+// Sin middleware 'auth': la sesion temporal de recuperacion la establecemos
+// nosotros mismos (ver mas abajo), un guard de sesion normal no aplica aca.
 // En cambio, SI se exige el flag que pone app/plugins/auth-recovery.client.ts
 // al recibir el evento PASSWORD_RECOVERY: sin el, cualquier usuario que ya
 // tenga una sesion normal iniciada podria entrar directo a esta URL y
 // cambiar su contraseña sin volver a autenticarse.
 const supabase = useSupabaseClient()
 const toast = useToast()
+const route = useRoute()
 
-if (import.meta.client && !sessionStorage.getItem('password-recovery')) {
-  await navigateTo('/login', { replace: true })
-}
+const verifyError = ref('')
+// Arranca siempre "verificando": el servidor y el cliente rendericen lo
+// mismo en el primer pintado (sessionStorage no existe en SSR, asi que esa
+// decision solo puede tomarse en el cliente, dentro de onMounted). Si vamos
+// a redirigir a /login, "checking" se queda en true a proposito: la pagina
+// esta por navegar, no hace falta ni conviene mostrar el formulario un
+// instante antes de irse.
+const checking = ref(true)
+
+onMounted(async () => {
+  const tokenHash = route.query.token_hash
+  const tokenType = route.query.type
+
+  if (typeof tokenHash === 'string' && tokenType === 'recovery') {
+    // El correo de recuperacion trae el token aca en vez de un link que
+    // Supabase verificaria con un simple GET: asi, un escaneo automatico del
+    // correo (Outlook, Gmail, antivirus) no consume el token de un solo uso
+    // antes de que el usuario le de clic de verdad.
+    const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' })
+    if (error) {
+      verifyError.value = 'Este enlace ya expiró o ya fue usado. Solicita uno nuevo.'
+    }
+    checking.value = false
+    return
+  }
+
+  if (!sessionStorage.getItem('password-recovery')) {
+    await navigateTo('/login', { replace: true })
+    return
+  }
+
+  checking.value = false
+})
 
 const password = ref('')
 const confirmPassword = ref('')
@@ -50,7 +81,20 @@ async function handleSubmit() {
 
 <template>
   <div class="auth-page">
-    <form class="auth-card" @submit.prevent="handleSubmit">
+    <div v-if="checking" class="auth-card">
+      <p class="auth-card__eyebrow">Acceso</p>
+      <h1>Verificando enlace…</h1>
+      <p class="auth-card__subtitle">Un momento, por favor.</p>
+    </div>
+
+    <div v-else-if="verifyError" class="auth-card">
+      <p class="auth-card__eyebrow">Enlace inválido</p>
+      <h1>No pudimos verificar el enlace</h1>
+      <p class="auth-card__subtitle">{{ verifyError }}</p>
+      <NuxtLink to="/recuperar" class="btn btn-primary auth-card__submit">Solicitar un enlace nuevo</NuxtLink>
+    </div>
+
+    <form v-else class="auth-card" @submit.prevent="handleSubmit">
       <p class="auth-card__eyebrow">Nueva contraseña</p>
       <h1>Crea tu nueva contraseña</h1>
       <p class="auth-card__subtitle">Elige una contraseña nueva para tu cuenta.</p>
