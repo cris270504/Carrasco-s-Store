@@ -79,41 +79,45 @@ async function handleSubmit() {
 .auth-card {
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: 0.85rem;
   width: 100%;
-  max-width: 380px;
+  max-width: 460px;
   background: var(--color-surface);
   border: 2px solid var(--color-border-strong);
   border-radius: var(--radius-card);
-  padding: 2rem 1.75rem;
+  padding: 3rem 2.75rem;
   box-shadow: var(--shadow-card);
 }
 .auth-card__eyebrow {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--color-accent);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin: 0;
 }
 .auth-card h1 {
-  font-size: 1.4rem;
-  margin-bottom: 0.15rem;
+  font-size: 1.75rem;
+  margin-bottom: 0.2rem;
 }
 .auth-card__subtitle {
   color: var(--color-ink-muted);
-  font-size: 0.88rem;
-  margin: 0 0 0.75rem;
+  font-size: 0.98rem;
+  line-height: 1.5;
+  margin: 0 0 1.25rem;
 }
 .auth-card label {
-  font-size: 0.82rem;
+  display: block;
+  font-size: 0.85rem;
   font-weight: 600;
   color: var(--color-ink-muted);
+  margin-bottom: 0.5rem;
 }
 .auth-card input {
   font-family: var(--font-body);
-  font-size: 0.92rem;
-  padding: 0.65rem 0.75rem;
+  font-size: 1rem;
+  width: 100%;
+  padding: 0.9rem 1.1rem;
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-control);
   background: var(--color-bg);
@@ -125,19 +129,22 @@ async function handleSubmit() {
   background: var(--color-surface);
 }
 .auth-card__submit {
-  margin-top: 0.75rem;
+  margin-top: 1rem;
   width: 100%;
+  padding-top: 0.9rem;
+  padding-bottom: 0.9rem;
+  font-size: 1rem;
 }
 .auth-card__error {
   color: var(--color-danger);
   font-size: 0.85rem;
-  margin: 0;
+  margin: 0.5rem 0 0;
 }
 .auth-card__footer {
   text-align: center;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   color: var(--color-ink-muted);
-  margin-top: 0.75rem;
+  margin-top: 1rem;
 }
 .auth-card__footer a {
   color: var(--color-accent);
