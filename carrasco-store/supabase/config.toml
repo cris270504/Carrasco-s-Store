@@ -1,13 +1,21 @@
 # Fragmento de referencia para la configuracion de Auth > Emails de Supabase.
-# Este repo no tiene un proyecto Supabase CLI inicializado (no se corrio
-# `supabase init`/`supabase link`), asi que este archivo no se aplica solo con
-# `supabase db push`. Para usarlo:
+# El proyecto SI esta enlazado (`supabase link --project-ref vygocxhtbghtwewyrymq`,
+# 02/10/2026), pero este archivo sigue siendo parcial a proposito: no tiene las
+# secciones [api]/[db]/[storage]/etc. que un config.toml completo tendria. NO
+# correr `supabase config push` con este archivo tal cual: ese comando
+# reemplaza toda la configuracion de Auth del proyecto, y podria resetear a
+# default ajustes que hoy existen en el Dashboard pero no estan aca (MFA,
+# notificaciones, SMS, proveedores, etc.).
 #
-#   a) Si en algun momento inicializas el CLI (`supabase init`), fusiona este
-#      bloque [auth.email] / [auth.rate_limit] en el config.toml completo que
-#      genere el CLI, y corre `supabase config push`.
-#   b) O, mas simple, copia estos mismos valores a mano en el Dashboard:
-#      Authentication > Emails (plantillas + "Confirm email") y
+# Para aplicar un cambio en [auth.email.template.*] o [auth.rate_limit] al
+# proyecto real:
+#
+#   a) Preferido: un PATCH acotado a la Management API
+#      (PATCH https://api.supabase.com/v1/projects/<ref>/config/auth) con
+#      SOLO los campos que cambiaron (ej. mailer_templates_confirmation_content,
+#      mailer_subjects_recovery) — asi nunca se tocan campos que no vienen al caso.
+#   b) O, mas simple para un cambio puntual, copiar el valor a mano en el
+#      Dashboard: Authentication > Emails (plantillas + asuntos) y
 #      Authentication > Rate Limits (email_sent).
 #
 # Los .html referenciados abajo viven en ./supabase/templates/.

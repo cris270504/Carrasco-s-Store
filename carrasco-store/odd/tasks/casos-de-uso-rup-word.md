@@ -56,3 +56,23 @@ Se empaquetó el flujo en la skill de usuario `rup-use-case-docs` (~/.claude/ski
 
 ## Nota de alcance
 No se modificó ningún archivo de código fuente de la tienda (el hallazgo de CU-C03/CU-A02 queda documentado, no corregido, por estar fuera del alcance autorizado de esta tarea).
+
+## v1.3 — Panel personalizable + fix de confirmacion de cuenta (02/10/2026)
+Se agregaron 8 casos de uso nuevos de Administrador (CU-A36 a CU-A43) para el panel de
+configuracion personalizable construido en esta sesion (marca, reglas de negocio, moneda,
+lineas de negocio activables, contacto y redes, contenido del inicio, textos legales,
+plantillas de correo). Se agrego RN-27 y se actualizaron RN-01/RN-03 para reflejar que
+IGV y monto minimo ahora son configurables. Se corrigio CU-S04 (correos de cuenta): ya no
+describe el mecanismo viejo (enlace que Supabase verifica con un GET), sino el nuevo
+(token_hash + verificacion con el SDK desde el cliente, aplicado tambien al correo de
+confirmacion de cuenta via la API de administracion de Supabase, no solo en el codigo).
+
+- [x] Dataset actualizado (catalog.json, rules.json, uc-administrador.json,
+      uc-sistemas-externos.json) y revalidado: 97 casos, 27 reglas.
+- [x] Diagramas UML y de flujo regenerados (Administrador paso de 4 a 5 paginas).
+- [x] Documento reconstruido y validado contra XSD: PASSED.
+- [x] Entregado como docs/Casos-de-Uso-RUP-Carrasco-Store-v1.3.docx (se conservan v1.0,
+      v1.1 y v1.2 como historico).
+- Limitacion que se mantiene: los 8 casos nuevos estan marcados Implementado en base a
+  typecheck + build + verificacion de la migracion en la base real, no a pruebas manuales
+  con clics reales en el formulario (sin credenciales de administrador en esta sesion).
