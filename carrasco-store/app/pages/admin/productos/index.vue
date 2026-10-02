@@ -24,20 +24,19 @@ const filtered = computed(() => (products.value ?? []).filter((p) => {
   return matchesType && matchesSearch
 }))
 
+// Este boton solo se muestra para productos SIN ventas (ver template): si
+// tuvieran ventas, el servidor igual rechazaria el borrado fisico y lo
+// convertiria en una desactivacion — exactamente lo que ya hace el
+// interruptor de Estado, asi que mostrar ambos caminos para lo mismo era
+// confuso. El `result.mode` se sigue revisando por si ese caso límite
+// ocurre de todas formas (ej. se registra una venta justo antes del clic).
 async function handleDelete(product: AdminProductListItem) {
-  const confirmed = await confirmDialog(product.hasSales
-    ? {
-        title: 'Desactivar producto',
-        message: `"${product.name}" tiene ventas registradas, así que se desactivará en vez de eliminarse: dejará de mostrarse en el catálogo pero se conserva su historial de órdenes. Podrás reactivarlo después desde su edición.`,
-        confirmLabel: 'Desactivar',
-        variant: 'danger',
-      }
-    : {
-        title: 'Eliminar producto',
-        message: `"${product.name}" no tiene ventas registradas, así que se eliminará de forma permanente junto con sus variantes e imágenes. Esta acción no se puede deshacer.`,
-        confirmLabel: 'Eliminar',
-        variant: 'danger',
-      })
+  const confirmed = await confirmDialog({
+    title: 'Eliminar producto',
+    message: `"${product.name}" se eliminará de forma permanente junto con sus variantes e imágenes. Esta acción no se puede deshacer.`,
+    confirmLabel: 'Eliminar',
+    variant: 'danger',
+  })
   if (!confirmed) return
 
   deletingId.value = product.id
@@ -49,7 +48,7 @@ async function handleDelete(product: AdminProductListItem) {
     await refresh()
     toast.success(result.mode === 'deleted'
       ? `"${product.name}" fue eliminado permanentemente.`
-      : `"${product.name}" fue desactivado.`)
+      : `"${product.name}" tenía ventas registradas: se desactivó en vez de eliminarse.`)
   }
   catch {
     toast.error('No se pudo completar la acción. Intenta de nuevo.')
@@ -59,23 +58,11 @@ async function handleDelete(product: AdminProductListItem) {
   }
 }
 
+// Interruptor de dos posiciones: el cambio es instantaneo y reversible con
+// otro clic, asi que no pide confirmacion (a diferencia de eliminar, que es
+// permanente).
 async function handleToggleStatus(product: AdminProductListItem) {
   const activating = !product.isActive
-  const confirmed = await confirmDialog(activating
-    ? {
-        title: 'Activar producto',
-        message: `"${product.name}" volverá a mostrarse en el catálogo.`,
-        confirmLabel: 'Activar',
-        variant: 'default',
-      }
-    : {
-        title: 'Desactivar producto',
-        message: `"${product.name}" dejará de mostrarse en el catálogo. Podrás activarlo de nuevo cuando quieras.`,
-        confirmLabel: 'Desactivar',
-        variant: 'danger',
-      })
-  if (!confirmed) return
-
   updatingStatusId.value = product.id
   try {
     await $fetch(`/api/admin/products/${product.id}`, { method: 'PATCH', body: { isActive: activating } })
@@ -150,35 +137,36 @@ async function handleToggleStatus(product: AdminProductListItem) {
                   </svg>
                 </NuxtLink>
                 <button
+                  v-if="!product.hasSales"
                   type="button"
                   class="icon-btn is-danger"
-                  :aria-label="product.hasSales ? 'Desactivar' : 'Eliminar'"
-                  :title="product.hasSales ? 'Desactivar (tiene ventas registradas)' : 'Eliminar permanentemente'"
+                  aria-label="Eliminar"
+                  title="Eliminar permanentemente"
                   :disabled="deletingId === product.id"
                   @click="handleDelete(product)"
                 >
-                  <svg v-if="product.hasSales" width="15" height="15" viewBox="0 0 20 20" fill="none">
-                    <path d="M2 10C3.5 6.5 6.5 4.5 10 4.5s6.5 2 8 5.5c-1.5 3.5-4.5 5.5-8 5.5s-6.5-2-8-5.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" />
-                    <circle cx="10" cy="10" r="2.2" stroke="currentColor" stroke-width="1.4" />
-                    <path d="M3.5 3.5l13 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
-                  </svg>
-                  <svg v-else width="15" height="15" viewBox="0 0 20 20" fill="none">
+                  <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
                     <path d="M4 6h12M8 6V4h4v2M6 6l.6 10h6.8L14 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
                   </svg>
                 </button>
               </div>
             </td>
             <td class="products-page__status-cell">
-              <button
-                type="button"
-                class="status-toggle"
-                :class="{ 'is-active': product.isActive }"
-                :disabled="updatingStatusId === product.id"
-                @click="handleToggleStatus(product)"
-              >
-                <span class="status-dot" :class="{ 'is-active': product.isActive }" />
-                {{ product.isActive ? 'Activo' : 'Inactivo' }}
-              </button>
+              <div class="products-page__status">
+                <span class="status-label" :class="{ 'is-active': product.isActive }">{{ product.isActive ? 'Activo' : 'Inactivo' }}</span>
+                <button
+                  type="button"
+                  class="switch"
+                  role="switch"
+                  :aria-checked="product.isActive"
+                  :aria-label="product.isActive ? 'Desactivar producto' : 'Activar producto'"
+                  :class="{ 'is-on': product.isActive }"
+                  :disabled="updatingStatusId === product.id"
+                  @click="handleToggleStatus(product)"
+                >
+                  <span class="switch__thumb" />
+                </button>
+              </div>
               <span v-if="product.hasSales" class="sales-badge" title="Tiene ventas registradas">Con ventas</span>
             </td>
           </tr>
@@ -340,48 +328,57 @@ async function handleToggleStatus(product: AdminProductListItem) {
   text-align: right;
 }
 .products-page__status-cell {
+  width: 1%;
   text-align: right;
 }
-
-.status-dot {
-  display: inline-block;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--color-ink-faint);
-  margin-right: 0.35rem;
-}
-.status-dot.is-active {
-  background: var(--color-success);
-}
-
-.status-toggle {
+.products-page__status {
   display: inline-flex;
   align-items: center;
-  font-family: var(--font-body);
+  gap: 0.6rem;
+}
+
+.status-label {
   font-size: 0.82rem;
   font-weight: 600;
-  padding: 0.35rem 0.75rem;
-  border-radius: 999px;
-  border: 1px solid var(--color-border-strong);
-  background: transparent;
   color: var(--color-ink-muted);
-  cursor: pointer;
+  min-width: 48px;
 }
-.status-toggle.is-active {
+.status-label.is-active {
   color: var(--color-success);
-  border-color: var(--color-success);
 }
-.status-toggle:hover {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
+
+.switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 38px;
+  height: 21px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: var(--color-border-strong);
+  cursor: pointer;
+  transition: background 0.15s ease;
 }
-.status-toggle:hover .status-dot {
-  background: currentColor;
+.switch.is-on {
+  background: var(--color-success);
 }
-.status-toggle:disabled {
+.switch:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+.switch__thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s ease;
+}
+.switch.is-on .switch__thumb {
+  transform: translateX(17px);
 }
 
 .sales-badge {
