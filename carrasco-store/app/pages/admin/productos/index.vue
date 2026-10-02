@@ -13,6 +13,7 @@ const typeLabels = { physical: 'Físico', digital: 'Digital', service: 'Servicio
 const typeFilter = ref<'all' | 'physical' | 'digital' | 'service'>('all')
 const search = ref('')
 const deletingId = ref<string | null>(null)
+const updatingStatusId = ref<string | null>(null)
 
 const confirmDialog = useConfirm()
 const toast = useToast()
@@ -57,6 +58,37 @@ async function handleDelete(product: AdminProductListItem) {
     deletingId.value = null
   }
 }
+
+async function handleToggleStatus(product: AdminProductListItem) {
+  const activating = !product.isActive
+  const confirmed = await confirmDialog(activating
+    ? {
+        title: 'Activar producto',
+        message: `"${product.name}" volverá a mostrarse en el catálogo.`,
+        confirmLabel: 'Activar',
+        variant: 'default',
+      }
+    : {
+        title: 'Desactivar producto',
+        message: `"${product.name}" dejará de mostrarse en el catálogo. Podrás activarlo de nuevo cuando quieras.`,
+        confirmLabel: 'Desactivar',
+        variant: 'danger',
+      })
+  if (!confirmed) return
+
+  updatingStatusId.value = product.id
+  try {
+    await $fetch(`/api/admin/products/${product.id}`, { method: 'PATCH', body: { isActive: activating } })
+    await refresh()
+    toast.success(`"${product.name}" quedó ${activating ? 'activo' : 'inactivo'}.`)
+  }
+  catch {
+    toast.error('No se pudo cambiar el estado. Intenta de nuevo.')
+  }
+  finally {
+    updatingStatusId.value = null
+  }
+}
 </script>
 
 <template>
@@ -95,8 +127,8 @@ async function handleDelete(product: AdminProductListItem) {
             <th>Marca</th>
             <th>Precio</th>
             <th>Detalle</th>
-            <th>Estado</th>
             <th />
+            <th class="products-page__status-head">Estado</th>
           </tr>
         </thead>
         <tbody>
@@ -110,11 +142,6 @@ async function handleDelete(product: AdminProductListItem) {
             <td>{{ product.brand ?? '—' }}</td>
             <td class="admin-table__mono">{{ formatMoney(Number(product.price), settings?.currencyCode) }}</td>
             <td class="products-page__detail">{{ product.detail }}</td>
-            <td>
-              <span class="status-dot" :class="{ 'is-active': product.isActive }" />
-              {{ product.isActive ? 'Activo' : 'Inactivo' }}
-              <span v-if="product.hasSales" class="sales-badge" title="Tiene ventas registradas">Con ventas</span>
-            </td>
             <td class="products-page__actions-cell">
               <div class="products-page__actions">
                 <NuxtLink :to="`/admin/productos/${product.id}/editar`" class="icon-btn" aria-label="Editar">
@@ -140,6 +167,19 @@ async function handleDelete(product: AdminProductListItem) {
                   </svg>
                 </button>
               </div>
+            </td>
+            <td class="products-page__status-cell">
+              <button
+                type="button"
+                class="status-toggle"
+                :class="{ 'is-active': product.isActive }"
+                :disabled="updatingStatusId === product.id"
+                @click="handleToggleStatus(product)"
+              >
+                <span class="status-dot" :class="{ 'is-active': product.isActive }" />
+                {{ product.isActive ? 'Activo' : 'Inactivo' }}
+              </button>
+              <span v-if="product.hasSales" class="sales-badge" title="Tiene ventas registradas">Con ventas</span>
             </td>
           </tr>
           <tr v-if="filtered.length === 0">
@@ -296,6 +336,13 @@ async function handleDelete(product: AdminProductListItem) {
 .type-badge.is-digital { background: var(--color-digital-tint); color: var(--color-digital-ink); }
 .type-badge.is-service { background: var(--color-service-tint); color: var(--color-service-ink); }
 
+.products-page__status-head {
+  text-align: right;
+}
+.products-page__status-cell {
+  text-align: right;
+}
+
 .status-dot {
   display: inline-block;
   width: 7px;
@@ -306,6 +353,35 @@ async function handleDelete(product: AdminProductListItem) {
 }
 .status-dot.is-active {
   background: var(--color-success);
+}
+
+.status-toggle {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border-strong);
+  background: transparent;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+}
+.status-toggle.is-active {
+  color: var(--color-success);
+  border-color: var(--color-success);
+}
+.status-toggle:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+.status-toggle:hover .status-dot {
+  background: currentColor;
+}
+.status-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .sales-badge {
