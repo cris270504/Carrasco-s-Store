@@ -94,6 +94,23 @@ export default defineEventHandler(async (event) => {
     }
     patch.currencyCode = code
   }
+  if (body?.catalogMinPrice !== undefined) {
+    const min = Number(body.catalogMinPrice)
+    if (!Number.isFinite(min) || min < 0) {
+      throw createError({ statusCode: 400, statusMessage: 'El precio mínimo del filtro debe ser un número mayor o igual a 0' })
+    }
+    patch.catalogMinPrice = min
+  }
+  if (body?.catalogMaxPrice !== undefined) {
+    const max = Number(body.catalogMaxPrice)
+    if (!Number.isFinite(max) || max <= 0) {
+      throw createError({ statusCode: 400, statusMessage: 'El precio máximo del filtro debe ser un número mayor a 0' })
+    }
+    patch.catalogMaxPrice = max
+  }
+  if (patch.catalogMinPrice !== undefined && patch.catalogMaxPrice !== undefined && patch.catalogMinPrice >= patch.catalogMaxPrice) {
+    throw createError({ statusCode: 400, statusMessage: 'El precio mínimo del filtro debe ser menor al máximo' })
+  }
 
   // ---- Líneas de negocio activas ----
   if (body?.physicalEnabled !== undefined) patch.physicalEnabled = Boolean(body.physicalEnabled)

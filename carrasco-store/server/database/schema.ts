@@ -320,6 +320,10 @@ export const storeSettings = pgTable('store_settings', {
   lowStockThreshold: integer('low_stock_threshold').notNull().default(5),
   mpMinAmount: decimal('mp_min_amount', { precision: 10, scale: 2 }).notNull().default('10'),
   currencyCode: varchar('currency_code', { length: 3 }).notNull().default('PEN'),
+  // Topes del slider de precio del catalogo (app/components/ProductFilters.vue),
+  // no un limite real de cuanto puede costar un producto.
+  catalogMinPrice: decimal('catalog_min_price', { precision: 10, scale: 2 }).notNull().default('0'),
+  catalogMaxPrice: decimal('catalog_max_price', { precision: 10, scale: 2 }).notNull().default('2000'),
 
   // ---- Lineas de negocio activas: solo ocultan del catalogo/inicio, no
   // bloquean ni borran productos ya creados de ese tipo. ----

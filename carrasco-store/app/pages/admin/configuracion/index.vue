@@ -40,6 +40,8 @@ const form = reactive({
   mpMinAmount: '10',
   currencyCode: 'PEN',
   currencyCustom: '',
+  catalogMinPrice: '0',
+  catalogMaxPrice: '2000',
   // Lineas de negocio
   physicalEnabled: true,
   digitalEnabled: true,
@@ -88,6 +90,8 @@ watch(initial, (v) => {
   form.mpMinAmount = v.mpMinAmount.toFixed(2)
   form.currencyCode = CURRENCY_OPTIONS.includes(v.currencyCode) ? v.currencyCode : 'otra'
   form.currencyCustom = CURRENCY_OPTIONS.includes(v.currencyCode) ? '' : v.currencyCode
+  form.catalogMinPrice = v.catalogMinPrice.toFixed(2)
+  form.catalogMaxPrice = v.catalogMaxPrice.toFixed(2)
 
   form.physicalEnabled = v.physicalEnabled
   form.digitalEnabled = v.digitalEnabled
@@ -166,6 +170,11 @@ const igvValid = computed(() => {
   const n = Number(form.igvPercent)
   return Number.isFinite(n) && n >= 0 && n <= 100
 })
+const catalogPriceValid = computed(() => {
+  const min = Number(form.catalogMinPrice)
+  const max = Number(form.catalogMaxPrice)
+  return Number.isFinite(min) && min >= 0 && Number.isFinite(max) && max > min
+})
 function saveReglas() {
   if (!igvValid.value) {
     toast.error('El IGV debe ser un porcentaje entre 0 y 100.')
@@ -176,11 +185,17 @@ function saveReglas() {
     toast.error('El código de moneda debe tener 3 letras (ej. PEN, USD).')
     return
   }
+  if (!catalogPriceValid.value) {
+    toast.error('El rango de precio del filtro no es válido: el mínimo debe ser menor al máximo.')
+    return
+  }
   save('reglas', {
     igvRate: Number(form.igvPercent) / 100,
     lowStockThreshold: Number(form.lowStockThreshold),
     mpMinAmount: Number(form.mpMinAmount),
     currencyCode: code,
+    catalogMinPrice: Number(form.catalogMinPrice),
+    catalogMaxPrice: Number(form.catalogMaxPrice),
   })
 }
 
@@ -418,6 +433,15 @@ function formatDate(value: string | null) {
               <option value="otra">Otra…</option>
             </select>
             <input v-if="form.currencyCode === 'otra'" v-model="form.currencyCustom" type="text" maxlength="3" placeholder="Código ISO de 3 letras" class="field__sub-input">
+          </div>
+          <div class="field">
+            <label>Rango del filtro de precio del catálogo</label>
+            <div class="field-row">
+              <input v-model="form.catalogMinPrice" type="number" min="0" step="0.01" placeholder="Mínimo" required>
+              <input v-model="form.catalogMaxPrice" type="number" min="0" step="0.01" placeholder="Máximo" required>
+            </div>
+            <p v-if="!catalogPriceValid" class="field__err">El mínimo debe ser menor al máximo.</p>
+            <p class="field__hint">Son los extremos del control deslizante de precio en el catálogo, no un límite de cuánto puede costar un producto.</p>
           </div>
           <button type="submit" class="btn btn-primary" :disabled="savingSection === 'reglas'">
             {{ savingSection === 'reglas' ? 'Guardando…' : 'Guardar' }}
@@ -716,6 +740,13 @@ function formatDate(value: string | null) {
 }
 .field__sub-input {
   margin-top: 0.5rem;
+}
+.field-row {
+  display: flex;
+  gap: 0.6rem;
+}
+.field-row input {
+  flex: 1;
 }
 .field__hint {
   font-size: 0.76rem;

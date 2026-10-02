@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { Product } from '~/types/product'
 
-const props = withDefaults(defineProps<{ product: Product, view?: 'grid' | 'list', priority?: boolean }>(), {
+const props = withDefaults(defineProps<{ product: Product, view?: 'grid' | 'list', priority?: boolean, adding?: boolean }>(), {
   view: 'grid',
   priority: false,
+  adding: false,
 })
 
 const emit = defineEmits<{ addToCart: [product: Product] }>()
@@ -33,10 +34,6 @@ const typeMeta = computed(() => {
       return { label: 'Físico', className: 'is-physical' }
   }
 })
-
-// Folio corto tipo "orden de servicio", derivado del id — visible y consistente,
-// no es un dato nuevo que guardar, solo una lectura del id ya existente.
-const ticketCode = computed(() => props.product.id.slice(0, 6).toUpperCase())
 
 const availabilityLabel = computed(() => {
   if (props.product.type === 'service') {
@@ -97,7 +94,6 @@ const isOutOfStock = computed(() => {
     <div class="product-card__body">
       <p class="product-card__eyebrow">
         <span class="product-card__badge" :class="typeMeta.className">{{ typeMeta.label }}</span>
-        <span class="product-card__ticket">#{{ ticketCode }}</span>
       </p>
 
       <h3 class="product-card__name">
@@ -116,10 +112,10 @@ const isOutOfStock = computed(() => {
         <button
           v-if="product.type !== 'physical' || product.variants.length === 0"
           class="btn btn-primary"
-          :disabled="isOutOfStock"
+          :disabled="isOutOfStock || adding"
           @click="emit('addToCart', product)"
         >
-          {{ product.type === 'service' ? 'Agendar' : 'Agregar' }}
+          {{ adding ? 'Agregando…' : (product.type === 'service' ? 'Agendar' : 'Agregar') }}
         </button>
         <NuxtLink v-else :to="`/producto/${product.slug}`" class="btn btn-outline">
           Ver opciones
@@ -254,12 +250,6 @@ const isOutOfStock = computed(() => {
 .product-card__badge.is-physical { background: var(--color-physical-tint); color: var(--color-physical-ink); }
 .product-card__badge.is-digital { background: var(--color-digital-tint); color: var(--color-digital-ink); }
 
-.product-card__ticket {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  color: var(--color-ink-faint);
-}
-
 .product-card__name {
   font-size: 1rem;
   font-weight: 600;
@@ -289,7 +279,8 @@ const isOutOfStock = computed(() => {
 }
 .product-card__availability {
   display: block;
-  font-size: 0.75rem;
+  font-size: 0.88rem;
+  font-weight: 600;
   color: var(--color-ink-muted);
   margin-top: 0.15rem;
 }

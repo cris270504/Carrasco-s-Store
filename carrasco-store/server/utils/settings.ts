@@ -31,6 +31,8 @@ export interface StoreSettingsData {
   lowStockThreshold: number
   mpMinAmount: number
   currencyCode: string
+  catalogMinPrice: number
+  catalogMaxPrice: number
 
   physicalEnabled: boolean
   digitalEnabled: boolean
@@ -74,6 +76,8 @@ export async function getStoreSettings(): Promise<StoreSettingsData> {
     lowStockThreshold: row?.lowStockThreshold ?? 5,
     mpMinAmount: row ? Number(row.mpMinAmount) : MP_MIN_AMOUNT_PEN,
     currencyCode: row?.currencyCode || 'PEN',
+    catalogMinPrice: row ? Number(row.catalogMinPrice) : 0,
+    catalogMaxPrice: row ? Number(row.catalogMaxPrice) : 2000,
 
     physicalEnabled: row?.physicalEnabled ?? true,
     digitalEnabled: row?.digitalEnabled ?? true,
@@ -114,6 +118,8 @@ export async function updateStoreSettings(patch: Partial<{
   lowStockThreshold: number
   mpMinAmount: number
   currencyCode: string
+  catalogMinPrice: number
+  catalogMaxPrice: number
 
   physicalEnabled: boolean
   digitalEnabled: boolean
@@ -149,6 +155,8 @@ export async function updateStoreSettings(patch: Partial<{
   if (patch.lowStockThreshold !== undefined) set.lowStockThreshold = patch.lowStockThreshold
   if (patch.mpMinAmount !== undefined) set.mpMinAmount = patch.mpMinAmount.toFixed(2)
   if ('currencyCode' in patch) set.currencyCode = patch.currencyCode || 'PEN'
+  if (patch.catalogMinPrice !== undefined) set.catalogMinPrice = patch.catalogMinPrice.toFixed(2)
+  if (patch.catalogMaxPrice !== undefined) set.catalogMaxPrice = patch.catalogMaxPrice.toFixed(2)
 
   if (patch.physicalEnabled !== undefined) set.physicalEnabled = patch.physicalEnabled
   if (patch.digitalEnabled !== undefined) set.digitalEnabled = patch.digitalEnabled

@@ -30,7 +30,10 @@ const sortedProducts = computed(() => {
   }
 })
 
+const addingId = ref<string | null>(null)
+
 async function handleAddToCart(product: Product) {
+  addingId.value = product.id
   try {
     await addItem({
       productId: product.id,
@@ -42,6 +45,9 @@ async function handleAddToCart(product: Product) {
   catch (err) {
     const fetchError = err as { data?: { statusMessage?: string } }
     toast.error(fetchError?.data?.statusMessage || 'No se pudo agregar al carrito.')
+  }
+  finally {
+    addingId.value = null
   }
 }
 
@@ -168,6 +174,7 @@ useSeoMeta({
             :key="product.id"
             :product="product"
             :view="viewMode"
+            :adding="addingId === product.id"
             @add-to-cart="handleAddToCart"
           />
         </div>

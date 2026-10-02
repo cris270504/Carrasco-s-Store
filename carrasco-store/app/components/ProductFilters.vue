@@ -15,18 +15,36 @@ const ALL_TYPE_OPTIONS = [
 // esto, el chip quedaba visible pero siempre devolvia cero resultados.
 const typeOptions = computed(() => ALL_TYPE_OPTIONS.filter(o => o.enabled(settings.value)))
 
-// Techo solo de referencia visual para el slider; los inputs numéricos
-// aceptan cualquier valor y son los que realmente viajan en la query.
-const SLIDER_MAX = 5000
+// Topes configurables desde /admin/configuracion (pestaña Reglas de
+// negocio); 0/2000 son solo el fallback mientras no haya fila guardada.
+const catalogMin = computed(() => settings.value?.catalogMinPrice ?? 0)
+const catalogMax = computed(() => settings.value?.catalogMaxPrice ?? 2000)
 
 const sliderMin = computed({
-  get: () => Number(props.filters.minPrice) || 0,
-  set: (val: number) => { props.filters.minPrice = val > 0 ? String(val) : '' },
+  get: () => Number(props.filters.minPrice) || catalogMin.value,
+  set: (val: number) => { props.filters.minPrice = val > catalogMin.value ? String(val) : '' },
 })
 const sliderMax = computed({
-  get: () => props.filters.maxPrice ? Number(props.filters.maxPrice) : SLIDER_MAX,
-  set: (val: number) => { props.filters.maxPrice = val < SLIDER_MAX ? String(val) : '' },
+  get: () => props.filters.maxPrice ? Number(props.filters.maxPrice) : catalogMax.value,
+  set: (val: number) => { props.filters.maxPrice = val < catalogMax.value ? String(val) : '' },
 })
+
+// Marca: filters.brand guarda una lista separada por comas (igual formato
+// que espera el query de /api/products), pero la UI es de chips
+// seleccionables, no texto libre — este computed traduce entre ambos.
+const selectedBrands = computed<string[]>({
+  get: () => props.filters.brand ? props.filters.brand.split(',').filter(Boolean) : [],
+  set: (list) => { props.filters.brand = list.join(',') },
+})
+function toggleBrand(brand: string) {
+  const current = selectedBrands.value
+  selectedBrands.value = current.includes(brand) ? current.filter(b => b !== brand) : [...current, brand]
+}
+
+const { data: availableBrands } = await useFetch<string[]>('/api/products/brands', { default: () => [] })
+const BRANDS_VISIBLE = 5
+const showAllBrands = ref(false)
+const visibleBrands = computed(() => showAllBrands.value ? availableBrands.value : availableBrands.value.slice(0, BRANDS_VISIBLE))
 
 const activeFilterCount = computed(() => {
   return [props.filters.type, props.filters.brand, props.filters.minPrice, props.filters.maxPrice]
@@ -65,8 +83,25 @@ const activeFilterCount = computed(() => {
     </div>
 
     <div class="filters__group">
-      <label class="filters__label" for="brand">Marca</label>
-      <input id="brand" v-model="filters.brand" type="text" placeholder="Buscar marca...">
+      <span class="filters__label">Marca</span>
+      <p v-if="availableBrands.length === 0" class="filters__empty">No hay marcas registradas.</p>
+      <template v-else>
+        <div class="filters__chips">
+          <button
+            v-for="brand in visibleBrands"
+            :key="brand"
+            type="button"
+            class="filters__chip"
+            :class="{ 'is-active': selectedBrands.includes(brand) }"
+            @click="toggleBrand(brand)"
+          >
+            {{ brand }}
+          </button>
+        </div>
+        <button v-if="!showAllBrands && availableBrands.length > BRANDS_VISIBLE" type="button" class="filters__more" @click="showAllBrands = true">
+          Ver más ({{ availableBrands.length - BRANDS_VISIBLE }})
+        </button>
+      </template>
     </div>
 
     <div class="filters__group">
@@ -76,31 +111,36 @@ const activeFilterCount = computed(() => {
           <div
             class="filters__price-fill"
             :style="{
-              left: `${(sliderMin / SLIDER_MAX) * 100}%`,
-              right: `${100 - (sliderMax / SLIDER_MAX) * 100}%`,
+              left: `${((sliderMin - catalogMin) / (catalogMax - catalogMin)) * 100}%`,
+              right: `${100 - ((sliderMax - catalogMin) / (catalogMax - catalogMin)) * 100}%`,
             }"
           />
         </div>
         <input
           v-model.number="sliderMin"
           type="range"
-          min="0"
-          :max="SLIDER_MAX"
+          :min="catalogMin"
+          :max="catalogMax"
           step="10"
         >
         <input
           v-model.number="sliderMax"
           type="range"
-          min="0"
-          :max="SLIDER_MAX"
+          :min="catalogMin"
+          :max="catalogMax"
           step="10"
         >
       </div>
       <div class="filters__price-range">
-        <input v-model="filters.minPrice" type="number" min="0" placeholder="Mín">
+        <input v-model="filters.minPrice" type="number" :min="catalogMin" placeholder="Mín">
         <span class="filters__price-dash">–</span>
-        <input v-model="filters.maxPrice" type="number" min="0" placeholder="Máx">
+        <input v-model="filters.maxPrice" type="number" :max="catalogMax" placeholder="Máx">
       </div>
+      <p class="filters__price-caption">
+        {{ formatMoney(sliderMin, settings?.currencyCode) }}{{ sliderMin <= catalogMin ? ' (mín.)' : '' }}
+        –
+        {{ formatMoney(sliderMax, settings?.currencyCode) }}{{ sliderMax >= catalogMax ? ' (máx.)' : '' }}
+      </p>
     </div>
   </aside>
 </template>
@@ -186,6 +226,30 @@ const activeFilterCount = computed(() => {
 }
 .filters__price-dash {
   color: var(--color-ink-faint);
+}
+.filters__price-caption {
+  font-size: 0.76rem;
+  color: var(--color-ink-muted);
+  margin: 0.1rem 0 0;
+}
+.filters__more {
+  align-self: flex-start;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+.filters__more:hover {
+  text-decoration: underline;
+}
+.filters__empty {
+  font-size: 0.82rem;
+  color: var(--color-ink-muted);
+  margin: 0;
 }
 
 .filters__price-slider {

@@ -75,6 +75,11 @@ const isExternal = computed(() => /^https?:\/\//.test(url.value))
 /* Banda oscura siempre, sin importar el tema claro/oscuro del sitio
    (misma logica que el header/footer). */
 .offer-countdown {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
   background: #16110d;
   color: #faf1e3;
 }

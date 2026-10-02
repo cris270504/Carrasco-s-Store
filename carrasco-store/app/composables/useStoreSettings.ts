@@ -24,6 +24,8 @@ export interface StoreSettings {
   lowStockThreshold: number
   mpMinAmount: number
   currencyCode: string
+  catalogMinPrice: number
+  catalogMaxPrice: number
 
   physicalEnabled: boolean
   digitalEnabled: boolean

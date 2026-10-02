@@ -1,4 +1,4 @@
-import { and, eq, gte, lte, ilike, ne } from 'drizzle-orm'
+import { and, eq, gte, lte, inArray, ne } from 'drizzle-orm'
 import { products } from '../../../server/database/schema'
 
 export default defineEventHandler(async (event) => {
@@ -20,8 +20,12 @@ export default defineEventHandler(async (event) => {
   if (query.categoryId) {
     filters.push(eq(products.categoryId, query.categoryId as string))
   }
+  // El filtro de marca viene de una lista de chips (seleccion multiple), no de
+  // texto libre: query.brand es una lista separada por comas con los nombres
+  // exactos devueltos por GET /api/products/brands.
   if (query.brand) {
-    filters.push(ilike(products.brand, `%${query.brand}%`))
+    const brands = String(query.brand).split(',').map(b => b.trim()).filter(Boolean)
+    if (brands.length > 0) filters.push(inArray(products.brand, brands))
   }
   if (query.minPrice) {
     filters.push(gte(products.price, String(query.minPrice)))

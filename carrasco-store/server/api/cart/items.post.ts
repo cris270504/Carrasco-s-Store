@@ -31,7 +31,14 @@ export default defineEventHandler(async (event) => {
     // en llamadas sucesivas (ej. 50 + 50) lo dejaba sin limite real.
     const nextQuantity = Math.min(existing.quantity + quantity, 50)
     if (found.product.type === 'physical' && nextQuantity > found.stock) {
-      throw createError({ statusCode: 400, statusMessage: `Stock insuficiente (disponible: ${found.stock})` })
+      // El mensaje distingue "ya tienes todo el stock" (el caso que motivo
+      // este fix: 2 en el carrito, stock 2) de "lo que ya tienes mas lo que
+      // pides se pasa del stock" (ej. 1 en el carrito, pides 2 mas, stock 2)
+      // — el primer mensaje seria enganoso en el segundo caso.
+      const message = existing.quantity >= found.stock
+        ? `Ya tienes ${existing.quantity} en tu carrito — es todo el stock disponible (${found.stock}).`
+        : `No puedes agregar ${quantity} más: ya tienes ${existing.quantity} en tu carrito y el stock disponible es ${found.stock}.`
+      throw createError({ statusCode: 400, statusMessage: message })
     }
     await db.update(cartItems)
       .set({ quantity: nextQuantity })

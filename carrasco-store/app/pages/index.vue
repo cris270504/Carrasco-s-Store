@@ -26,7 +26,10 @@ const heroBadge = computed(() => settings.value?.homeHeroBadge || '⚡ Ahora con
 const heroTitle = computed(() => settings.value?.homeHeroTitle || 'Todo lo que tu proyecto necesita.')
 const heroSubtitle = computed(() => settings.value?.homeHeroSubtitle || 'Productos físicos, licencias digitales y servicios técnicos — comprados, pagados y entregados sin cambiar de tienda.')
 
+const addingId = ref<string | null>(null)
+
 async function handleAddToCart(product: Product) {
+  addingId.value = product.id
   try {
     await addItem({
       productId: product.id,
@@ -38,6 +41,9 @@ async function handleAddToCart(product: Product) {
   catch (err) {
     const fetchError = err as { data?: { statusMessage?: string } }
     toast.error(fetchError?.data?.statusMessage || 'No se pudo agregar al carrito.')
+  }
+  finally {
+    addingId.value = null
   }
 }
 
@@ -196,6 +202,7 @@ const heroFloaters = [
           :key="product.id"
           :product="product"
           :priority="index < 4"
+          :adding="addingId === product.id"
           @add-to-cart="handleAddToCart"
         />
       </div>
@@ -292,6 +299,12 @@ const heroFloaters = [
 .home {
   display: flex;
   flex-direction: column;
+  /* Espacio reservado para OfferCountdown, que ahora es position: fixed en
+     la parte inferior (ver OfferCountdown.vue) y ya no ocupa lugar en el
+     flujo normal. Se aplica siempre, aunque el contador no se muestre (no
+     hay fecha configurada o ya venció): el espacio extra al final de la
+     pagina en ese caso es un costo estetico menor y aceptable. */
+  padding-bottom: 90px;
 }
 
 /* Hero — bloque de color plano estilo afiche, como la portada de referencia */
@@ -457,7 +470,7 @@ const heroFloaters = [
   margin: 0 auto;
   padding: 0 1.5rem;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(230px, 280px));
   gap: 1.1rem;
 }
 .featured__footer {
@@ -655,5 +668,14 @@ const heroFloaters = [
   .hero { padding: 3.5rem 1rem 3rem; }
   .hero h1 { font-size: 1.9rem; }
   .hero__trust { gap: 1rem; }
+}
+
+/* Mismo breakpoint que OfferCountdown.vue (max-width: 720px): ahi su
+   contenido se apila verticalmente y la banda fija ocupa mas alto, asi
+   que se reserva mas espacio abajo para no tapar el contenido. */
+@media (max-width: 720px) {
+  .home {
+    padding-bottom: 110px;
+  }
 }
 </style>
