@@ -7,6 +7,8 @@ const email = ref('')
 const password = ref('')
 const errorMsg = ref('')
 const loading = ref(false)
+// Llegamos aqui desde el registro: se avisa que hay que confirmar el correo (CU-V08).
+const registered = computed(() => route.query.registro === '1')
 
 // Si ya hay sesión activa, no tiene sentido mostrar el formulario de login.
 if (user.value) {
@@ -45,6 +47,10 @@ async function handleLogin() {
       <h1>Inicia sesión</h1>
       <p class="auth-card__subtitle">Consulta tus pedidos, licencias y agendamientos.</p>
 
+      <p v-if="registered" class="auth-card__success" role="status">
+        Cuenta creada. Revisa tu correo para confirmarla antes de ingresar.
+      </p>
+
       <label for="email">Correo electrónico</label>
       <input
         id="email"
@@ -56,14 +62,13 @@ async function handleLogin() {
       >
 
       <label for="password">Contraseña</label>
-      <input
+      <PasswordInput
         id="password"
         v-model="password"
-        type="password"
         required
         autocomplete="current-password"
         placeholder="••••••••"
-      >
+      />
       <NuxtLink to="/recuperar" class="auth-card__forgot">¿Olvidaste tu contraseña?</NuxtLink>
 
       <p v-if="errorMsg" class="auth-card__error" role="alert">{{ errorMsg }}</p>
@@ -164,5 +169,15 @@ async function handleLogin() {
   color: var(--color-accent);
   font-weight: 600;
   text-decoration: none;
+}
+.auth-card__error {
+  color: var(--color-danger);
+  font-size: 0.85rem;
+  margin: 0;
+}
+.auth-card__success {
+  color: var(--color-success);
+  font-size: 0.85rem;
+  margin: 0;
 }
 </style>

@@ -48,13 +48,13 @@ const confirmPassword = ref('')
 const errorMsg = ref('')
 const loading = ref(false)
 
-const passwordTooShort = computed(() => password.value.length > 0 && password.value.length < 6)
+const passwordMissing = computed(() => (password.value ? passwordIssues(password.value) : []))
 const passwordMismatch = computed(() => confirmPassword.value.length > 0 && confirmPassword.value !== password.value)
 
 async function handleSubmit() {
   errorMsg.value = ''
 
-  if (passwordTooShort.value || passwordMismatch.value) {
+  if (passwordMissing.value.length > 0 || passwordMismatch.value) {
     errorMsg.value = 'Revisa la contraseña antes de continuar.'
     return
   }
@@ -105,12 +105,12 @@ async function handleSubmit() {
         v-model="password"
         type="password"
         required
-        minlength="6"
+
         autocomplete="new-password"
-        placeholder="Mínimo 6 caracteres"
-        :class="{ 'is-invalid': passwordTooShort }"
+        placeholder="Mínimo 8 caracteres"
+        :class="{ 'is-invalid': passwordMissing.length > 0 }"
       >
-      <p v-if="passwordTooShort" class="field__error">Debe tener al menos 6 caracteres.</p>
+      <p v-if="passwordMissing.length" class="field__error">Falta: {{ passwordMissing.join(", ") }}.</p>
 
       <label for="confirmPassword">Confirmar contraseña</label>
       <input
@@ -118,7 +118,7 @@ async function handleSubmit() {
         v-model="confirmPassword"
         type="password"
         required
-        minlength="6"
+
         autocomplete="new-password"
         placeholder="Repite tu contraseña"
         :class="{ 'is-invalid': passwordMismatch }"

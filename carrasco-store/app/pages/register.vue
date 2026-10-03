@@ -7,23 +7,23 @@ const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 const errorMsg = ref('')
-const successMsg = ref('')
 const loading = ref(false)
 
 if (user.value) {
   await navigateTo('/dashboard')
 }
 
-// Validacion en vivo: antes solo se sabia de un typo en la confirmacion de
-// contraseña despues de enviar todo el formulario.
-const passwordTooShort = computed(() => password.value.length > 0 && password.value.length < 6)
+// Validacion en vivo de la regla de contraseña (CU-V08): muestra qué falta.
+const passwordMissing = computed(() => (password.value ? passwordIssues(password.value) : []))
 const passwordMismatch = computed(() => confirmPassword.value.length > 0 && confirmPassword.value !== password.value)
+// Correo ya registrado: se avisa explicitamente y se ofrece iniciar sesión (CU-V08).
+const emailTaken = ref(false)
 
 async function handleRegister() {
   errorMsg.value = ''
-  successMsg.value = ''
+  emailTaken.value = false
 
-  if (passwordTooShort.value || passwordMismatch.value) {
+  if (passwordMissing.value.length > 0 || passwordMismatch.value) {
     errorMsg.value = 'Revisa la contraseña antes de continuar.'
     return
   }
@@ -40,13 +40,19 @@ async function handleRegister() {
 
   loading.value = false
 
+  // Con confirmacion de correo activa, Supabase no da error para un correo
+  // existente: devuelve un usuario sin identidades. Se detecta por cualquiera de
+  // las dos señales.
+  const alreadyExists = (error && /already registered|already exists/i.test(error.message))
+    || (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0)
+  if (alreadyExists) {
+    emailTaken.value = true
+    errorMsg.value = 'Ya existe una cuenta con este correo.'
+    return
+  }
+
   if (error) {
-    // Mensaje generico para "ya existe una cuenta con este correo": mostrar
-    // el error de Supabase tal cual confirmaria que el correo esta
-    // registrado (fuga de existencia de cuentas).
-    errorMsg.value = /already registered|already exists/i.test(error.message)
-      ? 'No pudimos completar el registro. Si ya tienes una cuenta, intenta iniciar sesión.'
-      : error.message
+    errorMsg.value = error.message
     return
   }
 
@@ -54,7 +60,8 @@ async function handleRegister() {
     await navigateTo('/dashboard')
   }
   else {
-    successMsg.value = 'Cuenta creada. Revisa tu correo para confirmarla antes de ingresar.'
+    // Redirige a /login, donde se muestra el aviso "Revisa tu correo" (CU-V08).
+    await navigateTo({ path: '/login', query: { registro: '1' } })
   }
 }
 </script>
@@ -73,17 +80,15 @@ async function handleRegister() {
       <input id="email" v-model="email" type="email" required autocomplete="email" placeholder="tucorreo@ejemplo.com">
 
       <label for="password">Contraseña</label>
-      <input
+      <PasswordInput
         id="password"
         v-model="password"
-        type="password"
         required
-        minlength="6"
         autocomplete="new-password"
-        placeholder="Mínimo 6 caracteres"
-        :class="{ 'is-invalid': passwordTooShort }"
-      >
-      <p v-if="passwordTooShort" class="field__error">Debe tener al menos 6 caracteres.</p>
+        placeholder="Mínimo 8 caracteres"
+        :invalid="passwordMissing.length > 0"
+      />
+      <p v-if="passwordMissing.length" class="field__error">Falta: {{ passwordMissing.join(', ') }}.</p>
 
       <label for="confirmPassword">Confirmar contraseña</label>
       <input
@@ -98,8 +103,10 @@ async function handleRegister() {
       >
       <p v-if="passwordMismatch" class="field__error">Las contraseñas no coinciden.</p>
 
-      <p v-if="errorMsg" class="auth-card__error" role="alert">{{ errorMsg }}</p>
-      <p v-if="successMsg" class="auth-card__success" role="status">{{ successMsg }}</p>
+      <p v-if="errorMsg" class="auth-card__error" role="alert">
+        {{ errorMsg }}
+        <NuxtLink v-if="emailTaken" to="/login">Iniciar sesión</NuxtLink>
+      </p>
 
       <button type="submit" class="btn btn-primary auth-card__submit" :class="{ 'btn--loading': loading }" :disabled="loading" :aria-busy="loading">
         {{ loading ? 'Creando cuenta…' : 'Registrarme' }}
