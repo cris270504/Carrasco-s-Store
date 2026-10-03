@@ -24,7 +24,7 @@ Atender las auditorías pendientes de `docs/Bitacora-Auditoria-Casos-de-Uso.docx
 - [x] T3 `register.vue`: regla nueva, correo duplicado explícito, redirección a /login con aviso.
 - [x] T4 `login.vue`: botón de ojo y aviso "Revisa tu correo" desde el registro.
 - [x] T5 `restablecer-password.vue`: regla nueva.
-- [~] T6 Supabase Auth: `password_min_length` = 8 aplicado y verificado por GET. PARCIAL: `password_required_characters` rechazado por el API (400) con las variantes probadas; pendiente decisión del usuario.
+- [x] T6 Supabase Auth: `password_min_length` = 8 y `password_required_characters` = minúscula, mayúscula y número (verificado por GET). El símbolo queda solo en pantalla, por decisión del usuario.
 - [x] T7 Verificación: typecheck, build, pruebas en navegador SIN enviar registros (ver nota).
 - [ ] T8 Bitácora `.docx` actualizada: CU-V08/09/11 corregidos; CU-V10/12 OK. BLOQUEADO: Word tiene el archivo abierto (`~$tacora-…docx`); el usuario debe cerrarlo.
 - [ ] T9 Commit + push del código (sin el .docx). Pendiente del .docx: ver T8.
