@@ -40,7 +40,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
           <h3 v-if="request.title">{{ request.title }}</h3>
           <p>{{ request.message }}</p>
           <div class="confirm-dialog__actions">
-            <button type="button" class="btn btn-ghost" @click="respond(false)">
+            <button v-if="!request.notice" type="button" class="btn btn-ghost" @click="respond(false)">
               {{ request.cancelLabel ?? 'Cancelar' }}
             </button>
             <button

@@ -91,16 +91,14 @@ async function handleRegister() {
       <p v-if="passwordMissing.length" class="field__error">Falta: {{ passwordMissing.join(', ') }}.</p>
 
       <label for="confirmPassword">Confirmar contraseña</label>
-      <input
+      <PasswordInput
         id="confirmPassword"
         v-model="confirmPassword"
-        type="password"
         required
-        minlength="6"
         autocomplete="new-password"
         placeholder="Repite tu contraseña"
-        :class="{ 'is-invalid': passwordMismatch }"
-      >
+        :invalid="passwordMismatch"
+      />
       <p v-if="passwordMismatch" class="field__error">Las contraseñas no coinciden.</p>
 
       <p v-if="errorMsg" class="auth-card__error" role="alert">

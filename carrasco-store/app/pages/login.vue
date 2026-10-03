@@ -5,10 +5,21 @@ const route = useRoute()
 
 const email = ref('')
 const password = ref('')
-const errorMsg = ref('')
 const loading = ref(false)
-// Llegamos aqui desde el registro: se avisa que hay que confirmar el correo (CU-V08).
-const registered = computed(() => route.query.registro === '1')
+const confirm = useConfirm()
+
+// Llegamos aqui desde el registro: aviso modal para confirmar el correo (CU-V08).
+onMounted(async () => {
+  if (route.query.registro !== '1') return
+  const { registro, ...rest } = route.query
+  await navigateTo({ path: route.path, query: rest }, { replace: true })
+  await confirm({
+    title: 'Cuenta creada',
+    message: 'Revisa tu correo para confirmarla antes de ingresar.',
+    confirmLabel: 'Entendido',
+    notice: true,
+  })
+})
 
 // Si ya hay sesión activa, no tiene sentido mostrar el formulario de login.
 if (user.value) {
@@ -16,7 +27,6 @@ if (user.value) {
 }
 
 async function handleLogin() {
-  errorMsg.value = ''
   loading.value = true
 
   const { error } = await supabase.auth.signInWithPassword({
@@ -27,11 +37,25 @@ async function handleLogin() {
   loading.value = false
 
   if (error) {
-    // "Email not confirmed" tambien se generaliza: distinguirlo de credenciales
-    // invalidas confirmaria que el correo existe (fuga de existencia de cuentas).
-    errorMsg.value = ['Invalid login credentials', 'Email not confirmed'].includes(error.message)
-      ? 'Correo o contraseña incorrectos.'
-      : error.message
+    // "Email not confirmed" solo lo devuelve Supabase cuando la contraseña es
+    // correcta, asi que avisar de la confirmacion no revela nada extra. Las
+    // credenciales invalidas siguen generalizadas (no confirman si el correo existe).
+    if (error.message === 'Email not confirmed') {
+      await confirm({
+        title: 'Confirma tu correo',
+        message: 'Tu correo aún no está confirmado. Revisa tu bandeja de entrada (y spam) y abre el enlace que te enviamos.',
+        confirmLabel: 'Entendido',
+        notice: true,
+      })
+    }
+    else {
+      await confirm({
+        title: 'No pudimos iniciar sesión',
+        message: error.message === 'Invalid login credentials' ? 'Correo o contraseña incorrectos.' : error.message,
+        confirmLabel: 'Entendido',
+        notice: true,
+      })
+    }
     return
   }
 
@@ -46,10 +70,6 @@ async function handleLogin() {
       <p class="auth-card__eyebrow">Acceso</p>
       <h1>Inicia sesión</h1>
       <p class="auth-card__subtitle">Consulta tus pedidos, licencias y agendamientos.</p>
-
-      <p v-if="registered" class="auth-card__success" role="status">
-        Cuenta creada. Revisa tu correo para confirmarla antes de ingresar.
-      </p>
 
       <label for="email">Correo electrónico</label>
       <input
@@ -71,7 +91,6 @@ async function handleLogin() {
       />
       <NuxtLink to="/recuperar" class="auth-card__forgot">¿Olvidaste tu contraseña?</NuxtLink>
 
-      <p v-if="errorMsg" class="auth-card__error" role="alert">{{ errorMsg }}</p>
 
       <button type="submit" class="btn btn-primary auth-card__submit" :class="{ 'btn--loading': loading }" :disabled="loading" :aria-busy="loading">
         {{ loading ? 'Ingresando…' : 'Ingresar' }}

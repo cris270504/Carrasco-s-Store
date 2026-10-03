@@ -4,6 +4,8 @@ export interface ConfirmOptions {
   confirmLabel?: string
   cancelLabel?: string
   variant?: 'default' | 'danger'
+  // Aviso de un solo boton: oculta "Cancelar".
+  notice?: boolean
 }
 
 interface ConfirmRequest extends ConfirmOptions {

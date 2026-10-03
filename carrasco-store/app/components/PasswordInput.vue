@@ -38,9 +38,25 @@ const visible = ref(false)
 .password-input {
   position: relative;
 }
+/* Mismo aspecto que el resto de campos de auth: los estilos scoped de la
+   pagina no llegan a este <input> interno. */
 .password-input input {
   width: 100%;
-  padding-right: 2.6rem;
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  padding: 0.65rem 2.6rem 0.65rem 0.75rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-control);
+  background: var(--color-bg);
+  color: var(--color-ink);
+}
+.password-input input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  background: var(--color-surface);
+}
+.password-input input.is-invalid {
+  border-color: var(--color-danger);
 }
 .password-input__toggle {
   position: absolute;
