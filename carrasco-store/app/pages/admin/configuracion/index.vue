@@ -42,6 +42,7 @@ const form = reactive({
   currencyCustom: '',
   catalogMinPrice: '0',
   catalogMaxPrice: '2000',
+  catalogPriceStep: '25',
   // Lineas de negocio
   physicalEnabled: true,
   digitalEnabled: true,
@@ -92,6 +93,7 @@ watch(initial, (v) => {
   form.currencyCustom = CURRENCY_OPTIONS.includes(v.currencyCode) ? '' : v.currencyCode
   form.catalogMinPrice = v.catalogMinPrice.toFixed(2)
   form.catalogMaxPrice = v.catalogMaxPrice.toFixed(2)
+  form.catalogPriceStep = v.catalogPriceStep.toFixed(2)
 
   form.physicalEnabled = v.physicalEnabled
   form.digitalEnabled = v.digitalEnabled
@@ -175,6 +177,11 @@ const catalogPriceValid = computed(() => {
   const max = Number(form.catalogMaxPrice)
   return Number.isFinite(min) && min >= 0 && Number.isFinite(max) && max > min
 })
+const catalogStepValid = computed(() => {
+  const step = Number(form.catalogPriceStep)
+  const span = Number(form.catalogMaxPrice) - Number(form.catalogMinPrice)
+  return Number.isFinite(step) && step > 0 && step <= span
+})
 function saveReglas() {
   if (!igvValid.value) {
     toast.error('El IGV debe ser un porcentaje entre 0 y 100.')
@@ -189,6 +196,10 @@ function saveReglas() {
     toast.error('El rango de precio del filtro no es válido: el mínimo debe ser menor al máximo.')
     return
   }
+  if (!catalogStepValid.value) {
+    toast.error('El tramo del filtro debe ser mayor a 0 y no superar el rango total.')
+    return
+  }
   save('reglas', {
     igvRate: Number(form.igvPercent) / 100,
     lowStockThreshold: Number(form.lowStockThreshold),
@@ -196,6 +207,7 @@ function saveReglas() {
     currencyCode: code,
     catalogMinPrice: Number(form.catalogMinPrice),
     catalogMaxPrice: Number(form.catalogMaxPrice),
+    catalogPriceStep: Number(form.catalogPriceStep),
   })
 }
 
@@ -441,7 +453,13 @@ function formatDate(value: string | null) {
               <input v-model="form.catalogMaxPrice" type="number" min="0" step="0.01" placeholder="Máximo" required>
             </div>
             <p v-if="!catalogPriceValid" class="field__err">El mínimo debe ser menor al máximo.</p>
-            <p class="field__hint">Son los extremos del control deslizante de precio en el catálogo, no un límite de cuánto puede costar un producto.</p>
+            <p class="field__hint">Son los extremos de las casillas de precio en el catálogo, no un límite de cuánto puede costar un producto.</p>
+          </div>
+          <div class="field">
+            <label>Tramo de cada casilla de precio</label>
+            <input v-model="form.catalogPriceStep" type="number" min="0.01" step="0.01" placeholder="Ej. 25" required>
+            <p v-if="!catalogStepValid" class="field__err">El tramo debe ser mayor a 0 y no superar el rango total.</p>
+            <p class="field__hint">Ancho de cada tramo del filtro de precio (ej. 25 → S/ 0–25, S/ 25–50, …).</p>
           </div>
           <button type="submit" class="btn btn-primary" :disabled="savingSection === 'reglas'">
             {{ savingSection === 'reglas' ? 'Guardando…' : 'Guardar' }}

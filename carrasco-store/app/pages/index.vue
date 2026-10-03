@@ -471,7 +471,22 @@ const heroFloaters = [
   padding: 0 1.5rem;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(230px, 280px));
+  /* Con 1-4 productos las columnas no llenan el ancho: se centran en vez de
+     quedar pegadas a la izquierda. */
+  justify-content: center;
   gap: 1.1rem;
+}
+/* En escritorio, los destacados van siempre en una sola fila (1 a 4 productos):
+   auto-fit necesita 230px por tarjeta y con 4 productos saltaba de linea. */
+@media (min-width: 900px) {
+  .featured__grid {
+    display: flex;
+    flex-wrap: nowrap;
+  }
+  .featured__grid > * {
+    flex: 0 1 280px;
+    min-width: 0;
+  }
 }
 .featured__footer {
   max-width: 1180px;

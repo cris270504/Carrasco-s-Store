@@ -26,6 +26,7 @@ export interface StoreSettings {
   currencyCode: string
   catalogMinPrice: number
   catalogMaxPrice: number
+  catalogPriceStep: number
 
   physicalEnabled: boolean
   digitalEnabled: boolean

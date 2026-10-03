@@ -111,6 +111,13 @@ export default defineEventHandler(async (event) => {
   if (patch.catalogMinPrice !== undefined && patch.catalogMaxPrice !== undefined && patch.catalogMinPrice >= patch.catalogMaxPrice) {
     throw createError({ statusCode: 400, statusMessage: 'El precio mínimo del filtro debe ser menor al máximo' })
   }
+  if (body?.catalogPriceStep !== undefined) {
+    const step = Number(body.catalogPriceStep)
+    if (!Number.isFinite(step) || step <= 0) {
+      throw createError({ statusCode: 400, statusMessage: 'El tramo del filtro de precio debe ser un número mayor a 0' })
+    }
+    patch.catalogPriceStep = step
+  }
 
   // ---- Líneas de negocio activas ----
   if (body?.physicalEnabled !== undefined) patch.physicalEnabled = Boolean(body.physicalEnabled)

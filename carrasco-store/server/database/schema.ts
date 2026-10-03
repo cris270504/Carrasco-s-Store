@@ -324,6 +324,7 @@ export const storeSettings = pgTable('store_settings', {
   // no un limite real de cuanto puede costar un producto.
   catalogMinPrice: decimal('catalog_min_price', { precision: 10, scale: 2 }).notNull().default('0'),
   catalogMaxPrice: decimal('catalog_max_price', { precision: 10, scale: 2 }).notNull().default('2000'),
+  catalogPriceStep: decimal('catalog_price_step', { precision: 10, scale: 2 }).notNull().default('25'),
 
   // ---- Lineas de negocio activas: solo ocultan del catalogo/inicio, no
   // bloquean ni borran productos ya creados de ese tipo. ----

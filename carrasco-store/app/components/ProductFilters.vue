@@ -19,15 +19,49 @@ const typeOptions = computed(() => ALL_TYPE_OPTIONS.filter(o => o.enabled(settin
 // negocio); 0/2000 son solo el fallback mientras no haya fila guardada.
 const catalogMin = computed(() => settings.value?.catalogMinPrice ?? 0)
 const catalogMax = computed(() => settings.value?.catalogMaxPrice ?? 2000)
+const catalogStep = computed(() => settings.value?.catalogPriceStep ?? 25)
 
-const sliderMin = computed({
-  get: () => Number(props.filters.minPrice) || catalogMin.value,
-  set: (val: number) => { props.filters.minPrice = val > catalogMin.value ? String(val) : '' },
+// Tramos de precio como casillas (una sola activa a la vez). Cada tramo va de
+// `from` a `to`; el ultimo tramo es abierto (`to: null`, "Desde").
+interface PriceBucket { from: number, to: number | null }
+const priceBuckets = computed<PriceBucket[]>(() => {
+  const min = catalogMin.value
+  const max = catalogMax.value
+  const step = catalogStep.value
+  const buckets: PriceBucket[] = []
+  for (let i = 0; min + i * step < max; i++) {
+    const from = min + i * step
+    buckets.push({ from, to: Math.min(from + step, max) })
+  }
+  buckets.push({ from: max, to: null })
+  return buckets
 })
-const sliderMax = computed({
-  get: () => props.filters.maxPrice ? Number(props.filters.maxPrice) : catalogMax.value,
-  set: (val: number) => { props.filters.maxPrice = val < catalogMax.value ? String(val) : '' },
+
+// Estado derivado de filters.minPrice/maxPrice: asi la URL sigue siendo la
+// fuente de verdad y el filtro queda activo al recargar o compartir el enlace.
+const activeBucket = computed(() => {
+  const from = Number(props.filters.minPrice) || catalogMin.value
+  const to = props.filters.maxPrice ? Number(props.filters.maxPrice) : null
+  return priceBuckets.value.find(b => b.from === from && b.to === to) ?? null
 })
+function isBucketActive(bucket: PriceBucket) {
+  return activeBucket.value?.from === bucket.from
+}
+function toggleBucket(bucket: PriceBucket) {
+  if (isBucketActive(bucket)) {
+    props.filters.minPrice = ''
+    props.filters.maxPrice = ''
+    return
+  }
+  props.filters.minPrice = bucket.from > catalogMin.value ? String(bucket.from) : ''
+  props.filters.maxPrice = bucket.to === null ? '' : String(bucket.to)
+}
+function bucketLabel(bucket: PriceBucket) {
+  const currency = settings.value?.currencyCode
+  if (bucket.to === null) return `Desde ${formatMoney(bucket.from, currency)}`
+  if (bucket.from === catalogMin.value) return `Hasta ${formatMoney(bucket.to, currency)}`
+  return `${formatMoney(bucket.from, currency)} – ${formatMoney(bucket.to, currency)}`
+}
 
 // Marca: filters.brand guarda una lista separada por comas (igual formato
 // que espera el query de /api/products), pero la UI es de chips
@@ -106,41 +140,18 @@ const activeFilterCount = computed(() => {
 
     <div class="filters__group">
       <span class="filters__label">Precio ({{ settings?.currencyCode || 'PEN' }})</span>
-      <div class="filters__price-slider">
-        <div class="filters__price-track">
-          <div
-            class="filters__price-fill"
-            :style="{
-              left: `${((sliderMin - catalogMin) / (catalogMax - catalogMin)) * 100}%`,
-              right: `${100 - ((sliderMax - catalogMin) / (catalogMax - catalogMin)) * 100}%`,
-            }"
-          />
-        </div>
-        <input
-          v-model.number="sliderMin"
-          type="range"
-          :min="catalogMin"
-          :max="catalogMax"
-          step="10"
-        >
-        <input
-          v-model.number="sliderMax"
-          type="range"
-          :min="catalogMin"
-          :max="catalogMax"
-          step="10"
-        >
-      </div>
-      <div class="filters__price-range">
-        <input v-model="filters.minPrice" type="number" :min="catalogMin" placeholder="Mín">
-        <span class="filters__price-dash">–</span>
-        <input v-model="filters.maxPrice" type="number" :max="catalogMax" placeholder="Máx">
-      </div>
-      <p class="filters__price-caption">
-        {{ formatMoney(sliderMin, settings?.currencyCode) }}{{ sliderMin <= catalogMin ? ' (mín.)' : '' }}
-        –
-        {{ formatMoney(sliderMax, settings?.currencyCode) }}{{ sliderMax >= catalogMax ? ' (máx.)' : '' }}
-      </p>
+      <ul class="filters__prices">
+        <li v-for="bucket in priceBuckets" :key="bucket.from">
+          <label class="filters__price-option">
+            <input
+              type="checkbox"
+              :checked="isBucketActive(bucket)"
+              @change="toggleBucket(bucket)"
+            >
+            <span>{{ bucketLabel(bucket) }}</span>
+          </label>
+        </li>
+      </ul>
     </div>
   </aside>
 </template>
@@ -219,18 +230,34 @@ const activeFilterCount = computed(() => {
   border-color: var(--color-accent);
   background: var(--color-surface);
 }
-.filters__price-range {
+.filters__prices {
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem 0.35rem 0.25rem 0;
+  max-height: 260px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.filters__price-option {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.6rem;
+  padding: 0.3rem 0.2rem;
+  font-size: 0.86rem;
+  color: var(--color-ink);
+  cursor: pointer;
 }
-.filters__price-dash {
-  color: var(--color-ink-faint);
+.filters__price-option:hover {
+  color: var(--color-accent);
 }
-.filters__price-caption {
-  font-size: 0.76rem;
-  color: var(--color-ink-muted);
-  margin: 0.1rem 0 0;
+.filters__price-option input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--color-accent);
+  cursor: pointer;
 }
 .filters__more {
   align-self: flex-start;
@@ -252,60 +279,4 @@ const activeFilterCount = computed(() => {
   margin: 0;
 }
 
-.filters__price-slider {
-  position: relative;
-  height: 28px;
-  margin-top: 0.2rem;
-}
-.filters__price-track {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 3px;
-  transform: translateY(-50%);
-  background: var(--color-border-strong);
-  border-radius: 999px;
-}
-.filters__price-fill {
-  position: absolute;
-  top: 0;
-  height: 100%;
-  background: var(--color-accent);
-  border-radius: 999px;
-}
-.filters__price-slider input[type='range'] {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 28px;
-  margin: 0;
-  background: transparent;
-  appearance: none;
-  pointer-events: none;
-}
-.filters__price-slider input[type='range']::-webkit-slider-thumb {
-  appearance: none;
-  pointer-events: auto;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--color-surface);
-  border: 2px solid var(--color-accent);
-  cursor: pointer;
-  margin-top: 6px;
-}
-.filters__price-slider input[type='range']::-moz-range-thumb {
-  pointer-events: auto;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--color-surface);
-  border: 2px solid var(--color-accent);
-  cursor: pointer;
-}
-.filters__price-slider input[type='range']::-webkit-slider-runnable-track {
-  background: transparent;
-}
 </style>

@@ -33,6 +33,7 @@ export interface StoreSettingsData {
   currencyCode: string
   catalogMinPrice: number
   catalogMaxPrice: number
+  catalogPriceStep: number
 
   physicalEnabled: boolean
   digitalEnabled: boolean
@@ -78,6 +79,7 @@ export async function getStoreSettings(): Promise<StoreSettingsData> {
     currencyCode: row?.currencyCode || 'PEN',
     catalogMinPrice: row ? Number(row.catalogMinPrice) : 0,
     catalogMaxPrice: row ? Number(row.catalogMaxPrice) : 2000,
+    catalogPriceStep: row ? Number(row.catalogPriceStep) : 25,
 
     physicalEnabled: row?.physicalEnabled ?? true,
     digitalEnabled: row?.digitalEnabled ?? true,
@@ -120,6 +122,7 @@ export async function updateStoreSettings(patch: Partial<{
   currencyCode: string
   catalogMinPrice: number
   catalogMaxPrice: number
+  catalogPriceStep: number
 
   physicalEnabled: boolean
   digitalEnabled: boolean
@@ -157,6 +160,7 @@ export async function updateStoreSettings(patch: Partial<{
   if ('currencyCode' in patch) set.currencyCode = patch.currencyCode || 'PEN'
   if (patch.catalogMinPrice !== undefined) set.catalogMinPrice = patch.catalogMinPrice.toFixed(2)
   if (patch.catalogMaxPrice !== undefined) set.catalogMaxPrice = patch.catalogMaxPrice.toFixed(2)
+  if (patch.catalogPriceStep !== undefined) set.catalogPriceStep = patch.catalogPriceStep.toFixed(2)
 
   if (patch.physicalEnabled !== undefined) set.physicalEnabled = patch.physicalEnabled
   if (patch.digitalEnabled !== undefined) set.digitalEnabled = patch.digitalEnabled

@@ -60,12 +60,37 @@ export function useCart() {
     await applyRequest(() => $fetch<CartResponse>('/api/cart/items', { method: 'POST', body: payload }))
   }
 
+  // Actualizacion optimista: la UI cambia al instante y el servidor confirma
+  // despues. Si la mutacion falla (ej. excede el stock), se resincroniza con
+  // el estado real del servidor, asi que nunca queda un valor inventado.
+  function applyLocal(mutate: (items: CartLine[]) => CartLine[]) {
+    if (!cart.value) return
+    cart.value = { ...cart.value, items: mutate(cart.value.items) }
+  }
+
   async function setQuantity(itemId: string, quantity: number) {
-    await applyRequest(() => $fetch<CartResponse>(`/api/cart/items/${itemId}`, { method: 'PATCH', body: { quantity } }))
+    if (quantity <= 0) {
+      applyLocal(items => items.filter(i => i.id !== itemId))
+    }
+    else {
+      applyLocal(items => items.map(i => (i.id === itemId ? { ...i, quantity } : i)))
+    }
+    try {
+      await applyRequest(() => $fetch<CartResponse>(`/api/cart/items/${itemId}`, { method: 'PATCH', body: { quantity } }))
+    }
+    catch {
+      await fetchCart()
+    }
   }
 
   async function removeItem(itemId: string) {
-    await applyRequest(() => $fetch<CartResponse>(`/api/cart/items/${itemId}`, { method: 'DELETE' }))
+    applyLocal(items => items.filter(i => i.id !== itemId))
+    try {
+      await applyRequest(() => $fetch<CartResponse>(`/api/cart/items/${itemId}`, { method: 'DELETE' }))
+    }
+    catch {
+      await fetchCart()
+    }
   }
 
   const items = computed(() => cart.value?.items ?? [])
