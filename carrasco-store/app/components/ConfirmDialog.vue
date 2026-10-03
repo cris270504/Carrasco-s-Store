@@ -71,7 +71,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 }
 .confirm-dialog {
   width: 100%;
-  max-width: 380px;
+  max-width: 460px;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-top: 3px solid var(--color-border-strong);
@@ -111,10 +111,27 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
 .confirm-fade-enter-active,
 .confirm-fade-leave-active {
-  transition: opacity 0.15s ease;
+  transition: opacity 0.2s ease;
+}
+.confirm-fade-enter-active .confirm-dialog,
+.confirm-fade-leave-active .confirm-dialog {
+  transition: transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease;
 }
 .confirm-fade-enter-from,
 .confirm-fade-leave-to {
   opacity: 0;
+}
+.confirm-fade-enter-from .confirm-dialog,
+.confirm-fade-leave-to .confirm-dialog {
+  transform: translateY(12px) scale(0.96);
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .confirm-fade-enter-active,
+  .confirm-fade-leave-active,
+  .confirm-fade-enter-active .confirm-dialog,
+  .confirm-fade-leave-active .confirm-dialog {
+    transition: none;
+  }
 }
 </style>

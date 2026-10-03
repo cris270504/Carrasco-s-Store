@@ -95,10 +95,27 @@ function close() {
 
 .welcome-fade-enter-active,
 .welcome-fade-leave-active {
-  transition: opacity 0.15s ease;
+  transition: opacity 0.2s ease;
+}
+.welcome-fade-enter-active .welcome-dialog,
+.welcome-fade-leave-active .welcome-dialog {
+  transition: transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease;
 }
 .welcome-fade-enter-from,
 .welcome-fade-leave-to {
   opacity: 0;
+}
+.welcome-fade-enter-from .welcome-dialog,
+.welcome-fade-leave-to .welcome-dialog {
+  transform: translateY(12px) scale(0.96);
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .welcome-fade-enter-active,
+  .welcome-fade-leave-active,
+  .welcome-fade-enter-active .welcome-dialog,
+  .welcome-fade-leave-active .welcome-dialog {
+    transition: none;
+  }
 }
 </style>

@@ -375,11 +375,28 @@ onBeforeUnmount(unmount)
 
 .pay-fade-enter-active,
 .pay-fade-leave-active {
-  transition: opacity 0.15s ease;
+  transition: opacity 0.2s ease;
+}
+.pay-fade-enter-active .pay-dialog,
+.pay-fade-leave-active .pay-dialog {
+  transition: transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease;
 }
 .pay-fade-enter-from,
 .pay-fade-leave-to {
   opacity: 0;
+}
+.pay-fade-enter-from .pay-dialog,
+.pay-fade-leave-to .pay-dialog {
+  transform: translateY(12px) scale(0.96);
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pay-fade-enter-active,
+  .pay-fade-leave-active,
+  .pay-fade-enter-active .pay-dialog,
+  .pay-fade-leave-active .pay-dialog {
+    transition: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
